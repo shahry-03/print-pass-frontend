@@ -66,7 +66,7 @@ export function StudentDashboard() {
             onClick={() => navigate('/create-job')}
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
           >
-            Create Your First Job
+            Upload File to Print
           </button>
         </div>
       ) : (

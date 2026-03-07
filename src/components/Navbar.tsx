@@ -28,7 +28,7 @@ export function Navbar() {
                     '/dashboard'
                   )}`}
                 >
-                  My Jobs
+                  My Prints
                 </Link>
                 <Link
                   to="/shops"
@@ -44,7 +44,7 @@ export function Navbar() {
                     '/create-job'
                   )}`}
                 >
-                  New Job
+                  New Print
                 </Link>
               </>
             )}
