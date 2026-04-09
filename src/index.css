@@ -1,0 +1,316 @@
+/* ========== Google Font (must precede @import "tailwindcss") ========== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@import "tailwindcss";
+
+/* ========== Custom Design Tokens ========== */
+@theme {
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8fafc;
+  --color-surface-dark: #0f172a;
+  --color-surface-dark-alt: #1e293b;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+}
+
+/* ========== Base Styles ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-surface-alt);
+  color: #1e293b;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background-color: rgba(99, 102, 241, 0.25);
+  color: inherit;
+}
+
+.dark ::selection {
+  background-color: rgba(129, 140, 248, 0.35);
+}
+
+/* Skip to main content — visible on keyboard focus */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transform: translateY(-120%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.dark body,
+body.dark {
+  background-color: var(--color-surface-dark);
+  color: #e2e8f0;
+}
+
+/* ========== Accessibility — Focus Ring ========== */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ========== Glassmorphism Utility ========== */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ========== Gradient Backgrounds ========== */
+.gradient-hero {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+.dark .gradient-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+}
+
+/* ========== Button Interaction Utility ========== */
+.btn-press {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-press:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.btn-press:not(:disabled):active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* ========== Reusable UI Tokens ========== */
+.ui-card {
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240 / 0.9);
+  background: rgb(255 255 255 / 0.85);
+  box-shadow: 0 10px 25px rgb(15 23 42 / 0.08);
+}
+
+.dark .ui-card {
+  border-color: rgb(51 65 85 / 0.8);
+  background: rgb(30 41 59 / 0.8);
+  box-shadow: 0 12px 28px rgb(2 6 23 / 0.35);
+}
+
+.ui-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: rgb(248 250 252);
+  color: rgb(15 23 42);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.ui-input::placeholder {
+  color: rgb(148 163 184);
+}
+
+.ui-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.35);
+}
+
+.dark .ui-input {
+  border-color: rgb(71 85 105);
+  background: rgb(15 23 42 / 0.5);
+  color: rgb(248 250 252);
+}
+
+.dark .ui-input::placeholder {
+  color: rgb(100 116 139);
+}
+
+.ui-btn-primary {
+  color: white;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  box-shadow: 0 12px 24px rgb(99 102 241 / 0.25);
+}
+
+.ui-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.ui-btn-soft {
+  color: rgb(79 70 229);
+  background: rgb(238 242 255);
+}
+
+.ui-btn-soft:hover:not(:disabled) {
+  background: rgb(224 231 255);
+}
+
+.dark .ui-btn-soft {
+  color: rgb(165 180 252);
+  background: rgb(49 46 129 / 0.35);
+}
+
+.dark .ui-btn-soft:hover:not(:disabled) {
+  background: rgb(67 56 202 / 0.35);
+}
+
+/* ========== Scrollbar ========== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+/* ========== Animation Keyframes ========== */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+.animate-float-delayed {
+  animation: float-delayed 4s ease-in-out 1s infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(-2deg); }
+}
+.animate-float-slow {
+  animation: float-slow 5s ease-in-out 0.5s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out both;
+}
+
+@keyframes dot-drift {
+  0%   { transform: translateY(0); opacity: 0.3; }
+  50%  { opacity: 0.6; }
+  100% { transform: translateY(-100vh); opacity: 0; }
+}
+
+/* ========== Hero dot grid overlay ========== */
+.dot-grid {
+  background-image: radial-gradient(circle, rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.dark .dot-grid {
+  background-image: radial-gradient(circle, rgba(139, 92, 246, 0.15) 1px, transparent 1px);
+}
+
+/* ========== Step connector dashed line (desktop) ========== */
+.step-connector {
+  position: relative;
+}
+.step-connector::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -1rem;
+  width: 2rem;
+  height: 0;
+  border-top: 2px dashed #c7d2fe;
+  transform: translateY(-50%);
+}
+.dark .step-connector::after {
+  border-top-color: #3730a3;
+}
+
+/* ========== Accessibility — Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn-press,
+  .btn-press:hover,
+  .btn-press:active {
+    transform: none !important;
+  }
+}
