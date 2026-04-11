@@ -1,89 +1,16 @@
-# PrintPass — Frontend
+# React + Vite
 
-Modern React frontend for the PrintPass print job management platform.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Tech Stack
+Currently, two official plugins are available:
 
-- **React 19** + **TypeScript** + **Vite**
-- **TailwindCSS v4** — utility-first styling with dark mode
-- **Zustand** — lightweight state management
-- **React Router v7** — client-side routing
-- **Axios** — HTTP client with JWT interceptors
-- **Framer Motion** — animations
-- **React Hot Toast** — notifications
-- **Lucide React** — icons
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Quick Start
+## React Compiler
 
-```bash
-# Install dependencies
-npm install
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-# Start dev server
-npm run dev
+## Expanding the ESLint configuration
 
-# Build for production
-npm run build
-```
-
-## Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-## Project Structure
-
-```
-src/
-├── components/          # Reusable components
-│   ├── Layout.tsx       # Main layout (Navbar + Outlet + Footer)
-│   ├── Navbar.tsx       # Responsive navbar with role-based links
-│   ├── ProtectedRoute.tsx
-│   └── ui/              # UI atoms (LoadingSpinner, StatusBadge)
-├── pages/               # Route pages
-│   ├── LandingPage.tsx
-│   ├── LoginPage.tsx
-│   ├── RegisterPage.tsx
-│   ├── OtpVerifyPage.tsx
-│   ├── UploadPage.tsx
-│   ├── VendorDashboardPage.tsx
-│   ├── ShopSettingsPage.tsx
-│   ├── AdminDashboardPage.tsx
-│   └── NotFoundPage.tsx
-├── services/            # API integration
-│   ├── api.ts           # Axios instance + interceptors
-│   ├── authService.ts
-│   ├── shopService.ts
-│   ├── jobService.ts
-│   ├── adminService.ts
-│   └── otpService.ts
-├── store/               # Zustand stores
-│   ├── authStore.ts     # JWT + role + email
-│   └── themeStore.ts    # Dark mode toggle
-├── types/               # TypeScript interfaces
-│   └── index.ts
-├── App.tsx              # Router configuration
-├── main.tsx             # Entry point
-└── index.css            # TailwindCSS + custom styles
-```
-
-## Roles & Routes
-
-| Route | Access | Description |
-|---|---|---|
-| `/` | Public | Landing page |
-| `/upload` | Public | Student file upload (anonymous) |
-| `/login` | Public | Login form |
-| `/register` | Public | Shop registration |
-| `/verify-otp` | Public | Email OTP verification |
-| `/dashboard` | PRINT_SHOP | Vendor dashboard + PIN entry |
-| `/shop-settings` | PRINT_SHOP | Edit shop profile |
-| `/admin` | ADMIN | Admin panel — manage shops |
-
-## API Integration
-
-All API calls go through the gateway at `VITE_API_BASE_URL` (default: `http://localhost:8080`).
-JWT tokens are automatically attached via Axios interceptors. 401 responses trigger auto-logout.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
