@@ -2,8 +2,9 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
-  baseURL: '/api/v1',
-  timeout: 30000,
+    // Agar Vercel par VITE_API_URL mil jaye toh wo use karega, warna localhost (development ke liye)
+    baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api/v1',
+    timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
