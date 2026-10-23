@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import {
-  ScanLine, FileText, Printer, CheckCircle, Download,
+  ScanLine, FileText, Printer, CheckCircle, Download, Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { jobApi } from '../../api/jobApi';
@@ -9,10 +9,60 @@ import { getErrorMessage } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 
+/**
+ * Triggers the browser's native print dialog for a remote or blob PDF URL
+ * via a clean, isolated hidden iframe.
+ */
+const printPDF = (fileUrl) => {
+  return new Promise((resolve, reject) => {
+    if (!fileUrl) {
+      reject(new Error('No valid file URL provided for printing.'));
+      return;
+    }
+
+    // Clean up any existing print iframe
+    const existingIframe = document.getElementById('printpass-silent-iframe');
+    if (existingIframe) {
+      existingIframe.remove();
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'printpass-silent-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    iframe.src = fileUrl;
+
+    iframe.onload = () => {
+      try {
+        iframe.focus();
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        resolve();
+      } catch (err) {
+        // Fallback: If cross-origin or sandbox blocks direct iframe print, open in target window
+        window.open(fileUrl, '_blank')?.print?.();
+        resolve();
+      }
+    };
+
+    iframe.onerror = (err) => {
+      reject(err);
+    };
+
+    document.body.appendChild(iframe);
+  });
+};
+
 const PrintStation = () => {
   const [pin, setPin] = useState(Array(6).fill(''));
   const [step, setStep] = useState('input'); // input | preview | printed
   const [loading, setLoading] = useState(false);
+  const [actionType, setActionType] = useState(null); // 'fetch' | 'instant' | 'manual'
   const [fileData, setFileData] = useState(null);
   const inputRefs = useRef([]);
 
@@ -52,6 +102,7 @@ const PrintStation = () => {
     }
 
     setLoading(true);
+    setActionType('fetch');
     try {
       const res = await jobApi.getFileByPin(pinString);
       setFileData(res.data);
@@ -61,20 +112,58 @@ const PrintStation = () => {
       toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
+      setActionType(null);
     }
   };
 
-  const handlePrint = async () => {
+  /**
+   * Action 2: Instant Print
+   * Triggers native print dialog via hidden iframe + updates API status immediately
+   */
+  const handleInstantPrint = async () => {
     const pinString = pin.join('');
     setLoading(true);
+    setActionType('instant');
+
     try {
+      // 1. Trigger browser print modal if fileUrl is available
+      if (fileData?.fileUrl) {
+        try {
+          await printPDF(fileData.fileUrl);
+        } catch (printErr) {
+          console.warn('Native iframe print fallback:', printErr);
+          window.open(fileData.fileUrl, '_blank');
+        }
+      }
+
+      // 2. Automatically notify backend that job is printed
       const res = await jobApi.printJob(pinString);
       setStep('printed');
-      toast.success(res.data.message || 'Print completed!');
+      toast.success(res.data.message || 'Print job sent & marked as complete!');
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
+      setActionType(null);
+    }
+  };
+
+  /**
+   * Action 3: Mark as Printed (manual override without browser print dialog)
+   */
+  const handleMarkAsPrinted = async () => {
+    const pinString = pin.join('');
+    setLoading(true);
+    setActionType('manual');
+    try {
+      const res = await jobApi.printJob(pinString);
+      setStep('printed');
+      toast.success(res.data.message || 'Job marked as printed!');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+      setActionType(null);
     }
   };
 
@@ -82,6 +171,7 @@ const PrintStation = () => {
     setPin(Array(6).fill(''));
     setStep('input');
     setFileData(null);
+    setActionType(null);
     inputRefs.current[0]?.focus();
   };
 
@@ -100,7 +190,7 @@ const PrintStation = () => {
 
       <AnimatePresence mode="wait">
         {step === 'input' && (
-          <motion.div
+          <Motion.div
             key="input"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -132,18 +222,19 @@ const PrintStation = () => {
               <Button
                 fullWidth
                 size="lg"
-                loading={loading}
+                loading={loading && actionType === 'fetch'}
+                disabled={loading}
                 onClick={handleFetchFile}
                 style={{ marginTop: 16 }}
               >
                 Fetch File
               </Button>
             </Card>
-          </motion.div>
+          </Motion.div>
         )}
 
         {step === 'preview' && fileData && (
-          <motion.div
+          <Motion.div
             key="preview"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -158,22 +249,64 @@ const PrintStation = () => {
                 {fileData.message}
               </p>
 
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                {fileData.fileUrl && (
+              {/* ── 3 Action Buttons in Horizontal Flex Layout ── */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {/* Button 1: Download File (Outline / Secondary) */}
+                {fileData.fileUrl ? (
                   <a
                     href={fileData.fileUrl}
+                    download={fileData.fileName || 'document.pdf'}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Button variant="secondary" icon={Download}>
+                    <Button
+                      variant="secondary"
+                      icon={Download}
+                      disabled={loading}
+                    >
                       Download File
                     </Button>
                   </a>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    icon={Download}
+                    disabled
+                  >
+                    Download File
+                  </Button>
                 )}
+
+                {/* Button 2: Instant Print (Primary Highlighted Action) */}
                 <Button
-                  loading={loading}
+                  variant="primary"
+                  icon={Zap}
+                  loading={loading && actionType === 'instant'}
+                  disabled={loading}
+                  onClick={handleInstantPrint}
+                  style={{
+                    boxShadow: '0 2px 10px rgba(59, 130, 246, 0.35)',
+                    fontWeight: 700,
+                  }}
+                >
+                  Instant Print
+                </Button>
+
+                {/* Button 3: Mark as Printed (Ghost / Secondary Manual Override) */}
+                <Button
+                  variant="ghost"
                   icon={Printer}
-                  onClick={handlePrint}
+                  loading={loading && actionType === 'manual'}
+                  disabled={loading}
+                  onClick={handleMarkAsPrinted}
                 >
                   Mark as Printed
                 </Button>
@@ -181,22 +314,24 @@ const PrintStation = () => {
 
               <button
                 onClick={handleReset}
+                disabled={loading}
                 className="text-sm text-muted"
                 style={{
                   marginTop: 20,
                   background: 'none',
-                  cursor: 'pointer',
+                  cursor: loading ? 'not-allowed' : 'pointer',
                   color: 'var(--text-tertiary)',
+                  opacity: loading ? 0.5 : 1,
                 }}
               >
                 Cancel & enter new PIN
               </button>
             </Card>
-          </motion.div>
+          </Motion.div>
         )}
 
         {step === 'printed' && (
-          <motion.div
+          <Motion.div
             key="printed"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -224,7 +359,7 @@ const PrintStation = () => {
                 Next Customer
               </Button>
             </Card>
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </div>

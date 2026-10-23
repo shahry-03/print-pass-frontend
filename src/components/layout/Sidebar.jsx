@@ -3,17 +3,16 @@ import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../utils/constants';
 import {
   LayoutDashboard,
-  Store,
   ScanLine,
   ShieldCheck,
-  Settings,
+  Store,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { role } = useAuthStore();
 
   const shopLinks = [
-    { to: '/shop', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/shop', icon: Store, label: 'My Shops' },
     { to: '/shop/print', icon: ScanLine, label: 'Print Station' },
   ];
 
@@ -28,11 +27,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div
         className={`sidebar-overlay ${isOpen ? 'open' : ''}`}
         onClick={onClose}
+        aria-hidden="true"
       />
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''}`} aria-label="Main Navigation">
         <nav className="sidebar-nav">
           <span className="sidebar-section-title">
-            {role === ROLES.ADMIN ? 'Administration' : 'Print Shop'}
+            {role === ROLES.ADMIN ? 'Platform Management' : 'Shop Management'}
           </span>
           {links.map((link) => (
             <NavLink
@@ -51,8 +51,12 @@ const Sidebar = ({ isOpen, onClose }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <span className="text-xs text-muted" style={{ padding: '0 12px' }}>
-            PrintPass v1.0
+          <div className="sidebar-status-pill">
+            <span className="sidebar-status-dot" aria-hidden="true" />
+            <span>Operational</span>
+          </div>
+          <span className="text-xs text-muted" style={{ padding: '0 8px' }}>
+            v1.0.0
           </span>
         </div>
       </aside>
@@ -61,3 +65,4 @@ const Sidebar = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
+

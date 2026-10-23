@@ -9,10 +9,14 @@ const AppLayout = () => {
   return (
     <div className="app-layout">
       <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <main className="app-content">
-        <Outlet />
-      </main>
+      <div className="app-body">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <main className="app-content">
+          <div className="app-content-container">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { Store, User, Phone, MapPin, Building, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -8,7 +8,6 @@ import { shopApi } from '../../api/shopApi';
 import { getErrorMessage } from '../../utils/helpers';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
 
 const ShopEditPage = () => {
   const { id } = useParams();
@@ -50,47 +49,55 @@ const ShopEditPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+    <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <Motion.div
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
-        <Button
-          variant="ghost"
-          icon={ArrowLeft}
-          onClick={() => navigate('/shop')}
-          style={{ marginBottom: 20 }}
-        >
-          Back to Dashboard
-        </Button>
+        <div style={{ marginBottom: 20 }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={ArrowLeft}
+            onClick={() => navigate('/shop')}
+          >
+            Back to My Shops
+          </Button>
+        </div>
 
-        <Card>
-          <h2 style={{ marginBottom: 4 }}>Edit Shop</h2>
-          <p className="text-muted text-sm" style={{ marginBottom: 24 }}>
-            Update your shop profile information
-          </p>
+        <div className="card" style={{ padding: '32px 36px' }}>
+          <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+            <h1 style={{ fontSize: '1.5rem', marginBottom: 4 }}>Edit Shop Profile</h1>
+            <p className="text-muted text-sm">
+              Update information for <strong style={{ color: 'var(--text-primary)' }}>{shop.shopName}</strong>
+            </p>
+          </div>
 
           <form className="auth-form" onSubmit={handleSubmit(onSubmit)}>
-            <Input
-              label="Shop Name"
-              placeholder="My Print Shop"
-              icon={Store}
-              error={errors.shopName?.message}
-              {...register('shopName', {
-                required: 'Shop name is required',
-                maxLength: { value: 100, message: 'Max 100 characters' },
-              })}
-            />
-            <Input
-              label="Owner Name"
-              placeholder="John Doe"
-              icon={User}
-              error={errors.ownerName?.message}
-              {...register('ownerName', {
-                required: 'Owner name is required',
-                maxLength: { value: 100, message: 'Max 100 characters' },
-              })}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+              <Input
+                label="Shop Name"
+                placeholder="My Print Shop"
+                icon={Store}
+                error={errors.shopName?.message}
+                {...register('shopName', {
+                  required: 'Shop name is required',
+                  maxLength: { value: 100, message: 'Max 100 characters' },
+                })}
+              />
+              <Input
+                label="Owner Name"
+                placeholder="John Doe"
+                icon={User}
+                error={errors.ownerName?.message}
+                {...register('ownerName', {
+                  required: 'Owner name is required',
+                  maxLength: { value: 100, message: 'Max 100 characters' },
+                })}
+              />
+            </div>
+
             <Input
               label="Phone Number"
               placeholder="+92XXXXXXXXXX"
@@ -104,6 +111,7 @@ const ShopEditPage = () => {
                 },
               })}
             />
+
             <Input
               label="Address"
               placeholder="Shop #12, Main Market"
@@ -114,6 +122,7 @@ const ShopEditPage = () => {
                 maxLength: { value: 255, message: 'Max 255 characters' },
               })}
             />
+
             <Input
               label="City"
               placeholder="Karachi"
@@ -125,7 +134,7 @@ const ShopEditPage = () => {
               })}
             />
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 12, marginTop: 12, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <Button
                 type="button"
                 variant="secondary"
@@ -142,10 +151,11 @@ const ShopEditPage = () => {
               </Button>
             </div>
           </form>
-        </Card>
-      </motion.div>
+        </div>
+      </Motion.div>
     </div>
   );
 };
 
 export default ShopEditPage;
+

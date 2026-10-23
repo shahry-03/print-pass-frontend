@@ -67,3 +67,13 @@ export const truncateFileName = (name, maxLength = 30) => {
   const base = name.slice(0, maxLength - ext.length - 4);
   return `${base}...${ext}`;
 };
+
+/**
+ * Format raw bytes into human-readable size.
+ */
+export const formatFileSize = (bytes) => {
+  if (!bytes || isNaN(bytes)) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};

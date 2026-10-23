@@ -15,6 +15,11 @@ const EmptyState = ({ icon: Icon, title, description, action, onAction }) => {
           <Button onClick={onAction}>{action}</Button>
         </div>
       )}
+      {action && !onAction && (
+        <div style={{ marginTop: '20px' }}>
+          {action}
+        </div>
+      )}
     </div>
   );
 };
