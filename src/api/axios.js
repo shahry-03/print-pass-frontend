@@ -1,10 +1,16 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+// Safely normalize Base URL to prevent duplicate /api/v1 paths
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+  const cleanUrl = envUrl.trim().replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api/v1') ? cleanUrl : `${cleanUrl}/api/v1`;
+};
+
 const api = axios.create({
-    // Agar Vercel par VITE_API_URL mil jaye toh wo use karega, warna localhost (development ke liye)
-    baseURL: (import.meta.env.VITE_API_URL || 'http://localhost:8080') + '/api/v1',
-    timeout: 30000,
+  baseURL: resolveBaseUrl(),
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -22,10 +28,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response Interceptor: Handle 401 ──
+// ── Response Interceptor: Handle Errors & 401 ──
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true') {
+      console.warn(
+        `[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}:`,
+        error.response?.data || error.message
+      );
+    }
+
     if (error.response?.status === 401) {
       // Token expired or invalid — clear auth and redirect
       useAuthStore.getState().logout();
@@ -36,3 +49,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+
