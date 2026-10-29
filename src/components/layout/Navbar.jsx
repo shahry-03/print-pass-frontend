@@ -1,96 +1,229 @@
-import { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, ChevronDown, User, Shield, ScanLine, Store } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Menu, LogOut, ChevronDown, Shield, ScanLine, Store } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { ROLES } from '../../utils/constants';
+import { ROLE_DASHBOARD_MAP } from '../guards/RoleGuard';
 import Logo from '../common/Logo';
 import ThemeToggle from '../common/ThemeToggle';
 
-const Navbar = ({ onMenuToggle }) => {
-  const { email, role, logout } = useAuthStore();
+/**
+ * Breadcrumb resolver — extracted for testability.
+ * 
+ * ⚠️ Ordering matters:
+ *   - `/shop/print` must come BEFORE `/shop` (more specific first)
+ *   - If adding routes like `/admin/shops/new`, put them before `/admin`
+ */
+const getBreadcrumb = (pathname) => {
+  if (pathname.startsWith('/shop/print')) return 'Print Station';
+  if (pathname.includes('/edit')) return 'Edit Shop';
+  if (pathname.startsWith('/admin')) return 'Manage Shops';
+  if (pathname.startsWith('/shop')) return 'My Shops';
+  return 'Dashboard';
+};
+
+const Navbar = ({ onMenuToggle, isSidebarOpen = false }) => {
+  // ── Selector-based auth subscriptions ──
+  const email = useAuthStore((s) => s.email);
+  const role = useAuthStore((s) => s.role);
+  const logout = useAuthStore((s) => s.logout);
+
   const navigate = useNavigate();
   const location = useLocation();
+
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0); // Roving tabindex tracker
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const dropdownRef = useRef(null);
+  const triggerRef = useRef(null);
+  const itemRefs = useRef([]);
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const isAdmin = role === ROLES.ADMIN;
+  const homeLink = isAdmin
+    ? ROLE_DASHBOARD_MAP[ROLES.ADMIN]
+    : ROLE_DASHBOARD_MAP[ROLES.PRINT_SHOP];
+
+  const contextName = useMemo(
+    () => getBreadcrumb(location.pathname),
+    [location.pathname]
+  );
 
   const initials = email ? email.charAt(0).toUpperCase() : '?';
 
-  // Compute page context breadcrumb
-  let contextName = 'Dashboard';
-  if (location.pathname.startsWith('/shop/print')) {
-    contextName = 'Print Station';
-  } else if (location.pathname.includes('/edit')) {
-    contextName = 'Edit Shop';
-  } else if (location.pathname.startsWith('/admin')) {
-    contextName = 'Manage Shops';
-  } else if (location.pathname.startsWith('/shop')) {
-    contextName = 'My Shops';
-  }
+  // ── Menu items (data-driven) — declared before effects that reference count ──
+  const menuItems = isAdmin
+    ? [{ icon: Shield, label: 'Admin Console', path: '/admin' }]
+    : [
+        { icon: Store, label: 'My Shops', path: '/shop' },
+        { icon: ScanLine, label: 'Print Station', path: '/shop/print' },
+      ];
+
+  const totalItems = menuItems.length + 1; // +1 for Sign Out
+
+  // ── Close dropdown on route change ──
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  // ── Reset roving index + focus first item when menu opens ──
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    setActiveIndex(0);
+    requestAnimationFrame(() => itemRefs.current[0]?.focus());
+  }, [menuOpen]);
+
+  // ── Close on outside click ──
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  // ── Escape closes menu, restores focus to trigger ──
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
+
+  // ── Arrow-key nav with roving tabindex ──
+  const handleMenuKeyDown = (e) => {
+    const items = itemRefs.current.filter(Boolean);
+    const currentIndex = items.indexOf(document.activeElement);
+
+    const focusItem = (idx) => {
+      setActiveIndex(idx);
+      items[idx]?.focus();
+    };
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        focusItem((currentIndex + 1) % items.length);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        focusItem((currentIndex - 1 + items.length) % items.length);
+        break;
+      case 'Home':
+        e.preventDefault();
+        focusItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        focusItem(items.length - 1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // ── Open menu with ArrowDown / Enter / Space from trigger ──
+  const handleTriggerKeyDown = (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setMenuOpen(true);
+    }
+  };
+
+  // ── Memoized actions ──
+  const handleNavigate = useCallback(
+    (path) => {
+      setMenuOpen(false);
+      triggerRef.current?.focus();
+      navigate(path);
+    },
+    [navigate]
+  );
+
+  const handleLogout = useCallback(() => {
+    setMenuOpen(false);
+    logout();
+    navigate('/login', { replace: true });
+  }, [logout, navigate]);
 
   return (
     <header className="navbar">
+      {/* ── Left section ── */}
       <div className="navbar-left">
         <button
+          type="button"
           className="btn btn-ghost btn-icon mobile-menu-btn"
           onClick={onMenuToggle}
           aria-label="Toggle navigation menu"
+          aria-expanded={isSidebarOpen}
+          aria-controls="main-sidebar"
         >
-          <Menu size={20} />
+          <Menu size={20} aria-hidden="true" />
         </button>
 
-        <Logo linkTo={role === 'ADMIN' ? '/admin' : '/shop'} />
+        <Logo linkTo={homeLink} />
 
         <div className="navbar-context-divider" aria-hidden="true" />
 
-        <div className="navbar-context">
-          <span>{role === 'ADMIN' ? 'Admin' : 'Shop Portal'}</span>
-          <span style={{ color: 'var(--text-tertiary)' }}>/</span>
-          <span className="context-active">{contextName}</span>
-        </div>
+        <nav className="navbar-context" aria-label="Breadcrumb">
+          <span>{isAdmin ? 'Admin' : 'Shop Portal'}</span>
+          <span style={{ color: 'var(--text-tertiary)' }} aria-hidden="true">/</span>
+          <span className="context-active" aria-current="page">
+            {contextName}
+          </span>
+        </nav>
       </div>
 
+      {/* ── Right section ── */}
       <div className="navbar-actions">
-        {/* Quick action button for print station if in shop role */}
-        {role !== 'ADMIN' && (
+        {!isAdmin && (
           <Link
             to="/shop/print"
             className="btn btn-secondary btn-sm navbar-terminal-btn"
           >
-            <ScanLine size={15} />
+            <ScanLine size={15} aria-hidden="true" />
             <span>Terminal</span>
           </Link>
         )}
 
         <ThemeToggle />
 
-        {/* User profile dropdown button */}
-        <div style={{ position: 'relative' }} ref={menuRef}>
+        <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button
+            ref={triggerRef}
+            type="button"
             className="navbar-user-btn"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMenuOpen((prev) => !prev)}
+            onKeyDown={handleTriggerKeyDown}
             aria-expanded={menuOpen}
-            aria-haspopup="true"
-            aria-label="User profile menu"
+            aria-haspopup="menu"
+            aria-controls="user-dropdown"
+            aria-label={`User menu for ${email || 'current user'}`}
           >
-            <div className="navbar-user-avatar">{initials}</div>
+            <div className="navbar-user-avatar" aria-hidden="true">
+              {initials}
+            </div>
             <span className="navbar-user-email">{email}</span>
             <ChevronDown
               size={14}
+              aria-hidden="true"
               style={{
                 color: 'var(--text-tertiary)',
                 transform: menuOpen ? 'rotate(180deg)' : 'none',
@@ -100,61 +233,52 @@ const Navbar = ({ onMenuToggle }) => {
           </button>
 
           {menuOpen && (
-            <div className="user-menu-dropdown" role="menu">
+            <div
+              id="user-dropdown"
+              className="user-menu-dropdown"
+              role="menu"
+              aria-label="User menu"
+              onKeyDown={handleMenuKeyDown}
+            >
               <div className="user-menu-header">
-                <div className="user-menu-email">{email}</div>
+                <div className="user-menu-email">{email || 'Guest'}</div>
                 <div className="user-menu-role">
-                  {role === 'ADMIN' ? 'Platform Administrator' : 'Verified Shop Owner'}
+                  {isAdmin ? 'Platform Administrator' : 'Verified Shop Owner'}
                 </div>
               </div>
 
-              {role !== 'ADMIN' ? (
-                <>
-                  <button
-                    className="user-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/shop');
-                    }}
-                  >
-                    <Store size={15} />
-                    <span>My Shops</span>
-                  </button>
-                  <button
-                    className="user-menu-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate('/shop/print');
-                    }}
-                  >
-                    <ScanLine size={15} />
-                    <span>Print Station</span>
-                  </button>
-                </>
-              ) : (
+              {/* Dynamic menu items with roving tabindex */}
+              {menuItems.map((item, idx) => (
                 <button
+                  key={item.label}
+                  ref={(el) => { itemRefs.current[idx] = el; }}
+                  type="button"
                   className="user-menu-item"
                   role="menuitem"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate('/admin');
-                  }}
+                  tabIndex={idx === activeIndex ? 0 : -1}
+                  onClick={() => handleNavigate(item.path)}
                 >
-                  <Shield size={15} />
-                  <span>Admin Console</span>
+                  <item.icon size={15} aria-hidden="true" />
+                  <span>{item.label}</span>
                 </button>
-              )}
+              ))}
 
-              <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+              <div
+                role="separator"
+                aria-hidden="true"
+                style={{ height: 1, background: 'var(--border)', margin: '4px 0' }}
+              />
 
+              {/* Sign Out — last index in roving tabindex */}
               <button
+                ref={(el) => { itemRefs.current[menuItems.length] = el; }}
+                type="button"
                 className="user-menu-item danger"
                 role="menuitem"
+                tabIndex={menuItems.length === activeIndex ? 0 : -1}
                 onClick={handleLogout}
               >
-                <LogOut size={15} />
+                <LogOut size={15} aria-hidden="true" />
                 <span>Sign Out</span>
               </button>
             </div>
@@ -166,4 +290,3 @@ const Navbar = ({ onMenuToggle }) => {
 };
 
 export default Navbar;
-

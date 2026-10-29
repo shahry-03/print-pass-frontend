@@ -1,26 +1,67 @@
+import { useEffect, useRef, useId } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../utils/constants';
-import {
-  LayoutDashboard,
-  ScanLine,
-  ShieldCheck,
-  Store,
-} from 'lucide-react';
+import { ScanLine, ShieldCheck, Store } from 'lucide-react';
 
+// ── Static link config (module-level = no recreation on render) ──
+const SHOP_LINKS = [
+  { to: '/shop', icon: Store, label: 'My Shops', exact: true },
+  { to: '/shop/print', icon: ScanLine, label: 'Print Station', exact: false },
+];
+
+const ADMIN_LINKS = [
+  { to: '/admin', icon: ShieldCheck, label: 'Manage Shops', exact: true },
+];
+
+// Must match components.css @media (max-width: 768px)
+const MOBILE_MQ = '(max-width: 768px)';
+
+/**
+ * Sidebar — Role-aware navigation drawer.
+ *
+ * Features:
+ * - Role-based link configuration (data-driven)
+ * - Auto-focuses first link when opened on mobile
+ * - Self-contained Escape handler (defensive; AppLayout also handles it)
+ * - Proper ARIA labeling (nav labeled by section title)
+ * - Decorative icons hidden from screen readers
+ */
 const Sidebar = ({ isOpen, onClose }) => {
-  const { role } = useAuthStore();
+  // Selector-based — only re-renders when role changes
+  const role = useAuthStore((s) => s.role);
 
-  const shopLinks = [
-    { to: '/shop', icon: Store, label: 'My Shops' },
-    { to: '/shop/print', icon: ScanLine, label: 'Print Station' },
-  ];
+  const isAdmin = role === ROLES.ADMIN;
+  const links = isAdmin ? ADMIN_LINKS : SHOP_LINKS;
 
-  const adminLinks = [
-    { to: '/admin', icon: ShieldCheck, label: 'Manage Shops' },
-  ];
+  const navRef = useRef(null);
+  const sectionTitleId = useId();
 
-  const links = role === ROLES.ADMIN ? adminLinks : shopLinks;
+  // ── Focus first link when opened on mobile (a11y) ──
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    // Don't steal focus on desktop (sidebar is always visible there)
+    if (!window.matchMedia(MOBILE_MQ).matches) return undefined;
+
+    const timer = setTimeout(() => {
+      navRef.current?.querySelector('a')?.focus();
+    }, 50); // allow CSS transition to start
+
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  // ── Self-contained Escape handler ──
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose?.();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   return (
     <>
@@ -29,22 +70,32 @@ const Sidebar = ({ isOpen, onClose }) => {
         onClick={onClose}
         aria-hidden="true"
       />
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`} aria-label="Main Navigation">
-        <nav className="sidebar-nav">
-          <span className="sidebar-section-title">
-            {role === ROLES.ADMIN ? 'Platform Management' : 'Shop Management'}
+
+      <aside
+        id="main-sidebar"                          // ← Links to Navbar's aria-controls
+        className={`sidebar ${isOpen ? 'open' : ''}`}
+        aria-label="Main Navigation"
+      >
+        <nav
+          ref={navRef}
+          className="sidebar-nav"
+          aria-labelledby={sectionTitleId}
+        >
+          <span id={sectionTitleId} className="sidebar-section-title">
+            {isAdmin ? 'Platform Management' : 'Shop Management'}
           </span>
+
           {links.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/shop' || link.to === '/admin'}
+              end={link.exact}
               className={({ isActive }) =>
                 `sidebar-link ${isActive ? 'active' : ''}`
               }
-              onClick={onClose}
+              onClick={() => onClose?.()}
             >
-              <link.icon className="sidebar-icon" />
+              <link.icon className="sidebar-icon" aria-hidden="true" />
               <span>{link.label}</span>
             </NavLink>
           ))}
@@ -65,4 +116,3 @@ const Sidebar = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
-

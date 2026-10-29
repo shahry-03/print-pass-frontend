@@ -1,11 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 /**
- * Safely parse diverse timestamp formats returned by backend APIs:
- * - ISO-8601 with timezone: "2026-10-24T04:40:16Z", "2026-10-24T04:40:16+05:00"
- * - ISO-8601 local format: "2026-10-24T04:40:16"
- * - Epoch timestamp (milliseconds or seconds)
- * - Array format: [2026, 10, 24, 4, 40, 16]
+ * Safely parse diverse timestamp formats returned by backend APIs.
  */
 export const parseExpirationDate = (expiresAt) => {
   if (!expiresAt) return null;
@@ -15,7 +11,6 @@ export const parseExpirationDate = (expiresAt) => {
   }
 
   if (typeof expiresAt === 'number') {
-    // If timestamp in seconds (10 digits), convert to ms
     const ms = expiresAt < 1e11 ? expiresAt * 1000 : expiresAt;
     const d = new Date(ms);
     return isNaN(d.getTime()) ? null : d;
@@ -31,57 +26,187 @@ export const parseExpirationDate = (expiresAt) => {
     const trimmed = expiresAt.trim();
     if (!trimmed) return null;
 
-    // Direct parse
     const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) {
-      return d;
-    }
+    if (!isNaN(d.getTime())) return d;
 
-    // Fallback: replace space with T if format is "YYYY-MM-DD HH:MM:SS"
     if (trimmed.includes(' ') && !trimmed.includes('T')) {
       const dWithT = new Date(trimmed.replace(' ', 'T'));
-      if (!isNaN(dWithT.getTime())) {
-        return dWithT;
-      }
+      if (!isNaN(dWithT.getTime())) return dWithT;
     }
   }
 
   return null;
 };
 
+// ── Built-in formatters ──
+const FORMATTERS = {
+  long: ({ days, hours, minutes, seconds }) => {
+    if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+    return `${minutes}m ${seconds}s`;
+  },
+  short: ({ days, hours, minutes }) => {
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  },
+  digital: ({ days, hours, minutes, seconds }) => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const hms = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return days > 0 ? `${days}d ${hms}` : hms;
+  },
+};
+
+const DEFAULT_INTERVAL_MS = 1000;
+const DEFAULT_FORMAT = 'long';
+const DEFAULT_EXPIRED_LABEL = 'Expired';
+
 /**
- * Custom hook to calculate a drift-free live countdown from an expiration timestamp.
+ * useCountdown — Drift-free live countdown from an expiration timestamp.
+ *
+ * Features:
+ * - Drift-free: recomputes from `Date.now()` each tick
+ * - Precise expiry: last tick fires exactly at `expiresAt`
+ * - `onExpire` fires exactly once — INCLUDING when mounted already-expired
+ * - `onTick` fires each tick with remaining ms
+ * - `paused` support + visibility-change refresh
+ * - Configurable `intervalMs`, `format` ('long' | 'short' | 'digital' | fn)
+ * - `serverOffsetMs` for client/server clock skew
+ * - `totalSeconds` uses ceil() so display is natural (never shows "0s" while > 0ms remain)
  *
  * @param {string|number|Date|Array} expiresAt - Expiration instant
- * @returns {Object} { formatted, isExpired, isValid, timeLeft, targetDate }
+ * @param {Object} [options]
+ * @param {number}   [options.intervalMs=1000]
+ * @param {string|Function} [options.format='long']
+ * @param {boolean}  [options.paused=false]
+ * @param {Function} [options.onExpire]           - Called once on expiry (incl. initial mount)
+ * @param {Function} [options.onTick]             - Called each tick with remainingMs
+ * @param {number}   [options.serverOffsetMs=0]
+ * @param {string}   [options.expiredLabel='Expired']
+ *
+ * @returns {Object} { formatted, isExpired, isValid, timeLeft, totalRemainingMs, targetDate }
  */
-export const useCountdown = (expiresAt) => {
-  const calculateState = useCallback(() => {
-    const targetDate = parseExpirationDate(expiresAt);
+export const useCountdown = (expiresAt, options = {}) => {
+  const {
+    intervalMs = DEFAULT_INTERVAL_MS,
+    format = DEFAULT_FORMAT,
+    paused = false,
+    onExpire,
+    onTick,
+    serverOffsetMs = 0,
+    expiredLabel = DEFAULT_EXPIRED_LABEL,
+  } = options;
 
+  const [targetDate, setTargetDate] = useState(() => parseExpirationDate(expiresAt));
+  const [now, setNow] = useState(() => Date.now() + serverOffsetMs);
+
+  // Refs keep callbacks stable without re-creating the effect
+  const onExpireRef = useRef(onExpire);
+  const onTickRef = useRef(onTick);
+  const expireFiredRef = useRef(false);
+
+  useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
+  useEffect(() => { onTickRef.current = onTick; }, [onTick]);
+
+  // ── Re-sync when expiresAt or server offset changes ──
+  useEffect(() => {
+    setTargetDate(parseExpirationDate(expiresAt));
+    setNow(Date.now() + serverOffsetMs);
+    expireFiredRef.current = false;
+  }, [expiresAt, serverOffsetMs]);
+
+  // ── On resume from paused, refresh `now` immediately ──
+  useEffect(() => {
+    if (!paused) {
+      setNow(Date.now() + serverOffsetMs);
+    }
+  }, [paused, serverOffsetMs]);
+
+  // ── Drift-free ticker ──
+  useEffect(() => {
+    if (!targetDate || paused) return undefined;
+
+    const targetMs = targetDate.getTime();
+    const initialRemaining = targetMs - (Date.now() + serverOffsetMs);
+
+    // ✓ FIX: Fire onExpire once even if we mount already-expired
+    if (initialRemaining <= 0) {
+      if (!expireFiredRef.current) {
+        expireFiredRef.current = true;
+        onExpireRef.current?.();
+      }
+      return undefined;
+    }
+
+    let timer;
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+      const current = Date.now() + serverOffsetMs;
+      setNow(current);
+
+      const remaining = targetMs - current;
+
+      if (remaining <= 0) {
+        if (!expireFiredRef.current) {
+          expireFiredRef.current = true;
+          onExpireRef.current?.();
+        }
+        return;
+      }
+
+      onTickRef.current?.(remaining);
+
+      // Wake up exactly at expiry for the last tick
+      timer = setTimeout(tick, Math.min(intervalMs, remaining));
+    };
+
+    timer = setTimeout(tick, Math.min(intervalMs, initialRemaining));
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setNow(Date.now() + serverOffsetMs);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [targetDate, paused, intervalMs, serverOffsetMs]);
+
+  // ── Derived state ──
+  return useMemo(() => {
     if (!targetDate) {
       return {
         isExpired: false,
         isValid: false,
         formatted: '—',
         timeLeft: null,
+        totalRemainingMs: null,
         targetDate: null,
       };
     }
 
-    const diff = targetDate.getTime() - Date.now();
+    const remaining = targetDate.getTime() - now;
 
-    if (diff <= 0) {
+    if (remaining <= 0) {
       return {
         isExpired: true,
         isValid: true,
-        formatted: 'Expired',
-        timeLeft: { days: 0, hours: 0, minutes: 0, seconds: 0 },
+        formatted: expiredLabel,
+        timeLeft: { days: 0, hours: 0, minutes: 0, seconds: 0, totalSeconds: 0 },
+        totalRemainingMs: 0,
         targetDate,
       };
     }
 
-    const totalSeconds = Math.floor(diff / 1000);
+    // ✓ FIX: Use Math.ceil so users never see "0s remaining" while time is left.
+    //   (Math.floor(999/1000) === 0 — would show "0s" for a full second.)
+    const totalSeconds = Math.max(0, Math.ceil(remaining / 1000));
     const seconds = totalSeconds % 60;
     const totalMinutes = Math.floor(totalSeconds / 60);
     const minutes = totalMinutes % 60;
@@ -89,49 +214,21 @@ export const useCountdown = (expiresAt) => {
     const hours = totalHours % 24;
     const days = Math.floor(totalHours / 24);
 
-    let formatted = '';
-    if (days > 0) {
-      formatted = `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    } else if (hours > 0) {
-      formatted = `${hours}h ${minutes}m ${seconds}s`;
-    } else {
-      formatted = `${minutes}m ${seconds}s`;
-    }
+    const timeLeft = { days, hours, minutes, seconds, totalSeconds };
+    const formatter =
+      typeof format === 'function'
+        ? format
+        : FORMATTERS[format] || FORMATTERS[DEFAULT_FORMAT];
 
     return {
       isExpired: false,
       isValid: true,
-      formatted,
-      timeLeft: { days, hours, minutes, seconds },
+      formatted: formatter(timeLeft),
+      timeLeft,
+      totalRemainingMs: remaining,
       targetDate,
     };
-  }, [expiresAt]);
-
-  const [state, setState] = useState(calculateState);
-
-  useEffect(() => {
-    // Immediate calculation on prop change
-    setState(calculateState());
-
-    const target = parseExpirationDate(expiresAt);
-    if (!target) return;
-
-    // If already expired, no interval needed
-    if (target.getTime() <= Date.now()) return;
-
-    const interval = setInterval(() => {
-      const nextState = calculateState();
-      setState(nextState);
-
-      if (nextState.isExpired) {
-        clearInterval(interval);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [expiresAt, calculateState]);
-
-  return state;
+  }, [targetDate, now, format, expiredLabel]);
 };
 
 export default useCountdown;

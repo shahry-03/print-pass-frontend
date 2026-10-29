@@ -1,0 +1,67 @@
+/* ============================================
+   PrintPass — Print styles
+   Only applies in @media print
+   ============================================ */
+
+@media print {
+  /* Hide interactive chrome */
+  .navbar,
+  .sidebar,
+  .sidebar-overlay,
+  .theme-toggle,
+  .skip-to-content,
+  .pp-nav-wrapper,
+  .pp-footer,
+  .btn,
+  .modal-backdrop,
+  .toast-custom {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  .app-layout,
+  .app-body,
+  .app-content,
+  .app-content-container {
+    display: block !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  /* Print station voucher should print cleanly */
+  .customer-voucher-card,
+  .file-preview-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
+
+  .voucher-pin-digit {
+    border: 2px solid black !important;
+    color: black !important;
+    background: white !important;
+  }
+
+  /* Keep links black (not blue) */
+  a {
+    color: black !important;
+    text-decoration: underline;
+  }
+
+  /* Tables */
+  .table {
+    border: 1px solid #ccc !important;
+  }
+  .table th,
+  .table td {
+    border: 1px solid #ccc !important;
+    background: white !important;
+  }
+}

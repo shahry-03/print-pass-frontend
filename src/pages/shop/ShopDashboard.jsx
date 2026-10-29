@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion as Motion } from 'framer-motion';
 import {
   Store, MapPin, Phone, Calendar,
   Edit, CheckCircle, XCircle, AlertCircle,
-  ScanLine, Plus, ShieldCheck, Activity,
+  ScanLine, Plus, ShieldCheck, Activity, RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { shopApi } from '../../api/shopApi';
@@ -14,31 +14,86 @@ import Button from '../../components/ui/Button';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
+/**
+ * ShopDashboard — Owner's view of their registered print shops.
+ *
+ * Features:
+ * - Loading / error / empty / populated states (all covered)
+ * - Refresh button (manual re-fetch)
+ * - Memoized metrics + callbacks
+ * - Polymorphic Button `as={Link}` (cleaner than nested <Link><Button>)
+ * - Badge `dot` prop (removes inline style hacks)
+ * - Retry on fetch failure
+ */
 const ShopDashboard = () => {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchShops();
-  }, []);
+  // ── Fetch shops ──
+  const fetchShops = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  const fetchShops = async () => {
     try {
-      const res = await shopApi.getMyShops();
-      setShops(res.data);
+      // ✓ FIX: shopApi.getMyShops() returns data directly (no `.data`)
+      const data = await shopApi.getMyShops();
+      setShops(Array.isArray(data) ? data : []);
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const message = getErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  if (loading) return <Spinner size="lg" />;
+  useEffect(() => {
+    fetchShops();
+  }, [fetchShops]);
 
-  // Calculate real metrics strictly from existing shop records
-  const totalShops = shops.length;
-  const verifiedShops = shops.filter((s) => s.isVerified).length;
-  const activeShops = shops.filter((s) => s.isActive).length;
+  // ── Derived metrics (memoized) ──
+  const metrics = useMemo(() => {
+    if (!shops.length) return null;
+    return {
+      total: shops.length,
+      verified: shops.filter((s) => s.isVerified).length,
+      active: shops.filter((s) => s.isActive).length,
+    };
+  }, [shops]);
+
+  // ── Loading state ──
+  if (loading) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1>My Shops</h1>
+          <p>Manage your registered print locations and terminal status</p>
+        </div>
+        <Spinner size="lg" label="Loading your shops" />
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (error) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1>My Shops</h1>
+          <p>Manage your registered print locations and terminal status</p>
+        </div>
+        <EmptyState
+          variant="error"
+          icon={AlertCircle}
+          title="Failed to load your shops"
+          description={error}
+          action="Retry"
+          onAction={fetchShops}
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -49,51 +104,64 @@ const ShopDashboard = () => {
             <h1>My Shops</h1>
             <p>Manage your registered print locations and terminal status</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Link to="/shop/print">
-              <Button variant="secondary" icon={ScanLine}>
-                Launch Print Station
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button icon={Plus}>
-                Register Another Shop
-              </Button>
-            </Link>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Button
+              variant="ghost"
+              icon={RefreshCw}
+              onClick={fetchShops}
+              aria-label="Refresh shop list"
+            >
+              Refresh
+            </Button>
+            <Button
+              as={Link}
+              to="/shop/print"
+              variant="secondary"
+              icon={ScanLine}
+            >
+              Launch Print Station
+            </Button>
+            <Button
+              as={Link}
+              to="/register"
+              icon={Plus}
+            >
+              Register Another Shop
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* ── Metric Summary Strip (Computed only from real shop state) ── */}
-      {shops.length > 0 && (
+      {/* ── Metric Summary Strip ── */}
+      {metrics && (
         <div className="stats-strip">
           <div className="stat-metric-card">
             <div className="stat-metric-icon">
-              <Store size={22} />
+              <Store size={22} aria-hidden="true" />
             </div>
             <div>
               <div className="stat-metric-label">Registered Shops</div>
-              <div className="stat-metric-value">{totalShops}</div>
+              <div className="stat-metric-value">{metrics.total}</div>
             </div>
           </div>
 
           <div className="stat-metric-card">
             <div className="stat-metric-icon success">
-              <ShieldCheck size={22} />
+              <ShieldCheck size={22} aria-hidden="true" />
             </div>
             <div>
               <div className="stat-metric-label">Verified Locations</div>
-              <div className="stat-metric-value">{verifiedShops}</div>
+              <div className="stat-metric-value">{metrics.verified}</div>
             </div>
           </div>
 
           <div className="stat-metric-card">
             <div className="stat-metric-icon info">
-              <Activity size={22} />
+              <Activity size={22} aria-hidden="true" />
             </div>
             <div>
               <div className="stat-metric-label">Active Terminals</div>
-              <div className="stat-metric-value">{activeShops}</div>
+              <div className="stat-metric-value">{metrics.active}</div>
             </div>
           </div>
         </div>
@@ -106,9 +174,9 @@ const ShopDashboard = () => {
           title="No registered shops found"
           description="You haven't registered any print shops yet. Register your first shop to start receiving print requests from students."
           action={
-            <Link to="/register">
-              <Button icon={Plus}>Register Your Shop</Button>
-            </Link>
+            <Button as={Link} to="/register" icon={Plus}>
+              Register Your Shop
+            </Button>
           }
         />
       ) : (
@@ -119,74 +187,73 @@ const ShopDashboard = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.3 }}
+              className="shop-card-wrapper"
             >
-              <div className="shop-card-wrapper">
-                {/* Header Row */}
-                <div className="shop-card-header">
-                  <div className="shop-card-title-group">
-                    <h2 className="shop-card-title">{shop.shopName}</h2>
-                    <div className="shop-card-owner-badge">
-                      <span className="shop-card-owner-avatar">
-                        {shop.ownerName ? shop.ownerName.charAt(0).toUpperCase() : 'O'}
-                      </span>
-                      <span>Owner: <strong>{shop.ownerName}</strong></span>
-                    </div>
-                  </div>
-
-                  {/* Status Badges */}
-                  <div className="shop-card-badges">
-                    {shop.isVerified ? (
-                      <Badge variant="success">
-                        <CheckCircle size={12} /> Verified
-                      </Badge>
-                    ) : (
-                      <Badge variant="warning">
-                        <AlertCircle size={12} /> Pending Review
-                      </Badge>
-                    )}
-                    {shop.isActive ? (
-                      <Badge variant="success">
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="danger">
-                        <XCircle size={12} /> Inactive
-                      </Badge>
-                    )}
+              {/* Header Row */}
+              <div className="shop-card-header">
+                <div className="shop-card-title-group">
+                  <h2 className="shop-card-title">{shop.shopName}</h2>
+                  <div className="shop-card-owner-badge">
+                    <span className="shop-card-owner-avatar" aria-hidden="true">
+                      {shop.ownerName ? shop.ownerName.charAt(0).toUpperCase() : 'O'}
+                    </span>
+                    <span>Owner: <strong>{shop.ownerName}</strong></span>
                   </div>
                 </div>
 
-                {/* Metadata List */}
-                <div className="shop-card-info-list">
-                  <div className="shop-card-info-row">
-                    <MapPin size={16} />
-                    <span>{shop.address}, <strong>{shop.city}</strong></span>
-                  </div>
-                  <div className="shop-card-info-row">
-                    <Phone size={16} />
-                    <span className="mono">{shop.phone}</span>
-                  </div>
-                  <div className="shop-card-info-row">
-                    <Calendar size={16} />
-                    <span>Registered on {formatDate(shop.createdAt)}</span>
-                  </div>
+                {/* Status Badges — using new `dot` prop */}
+                <div className="shop-card-badges">
+                  {shop.isVerified ? (
+                    <Badge variant="success" dot>Verified</Badge>
+                  ) : (
+                    <Badge variant="warning" dot>Pending Review</Badge>
+                  )}
+                  {shop.isActive ? (
+                    <Badge variant="success" dot>Active</Badge>
+                  ) : (
+                    <Badge variant="danger" dot>Inactive</Badge>
+                  )}
                 </div>
+              </div>
 
-                {/* Action Footer */}
-                <div className="shop-card-actions">
-                  <Link to={`/shop/${shop.id}/edit`} state={{ shop }}>
-                    <Button variant="secondary" size="sm" icon={Edit}>
-                      Edit Details
-                    </Button>
-                  </Link>
-
-                  <Link to="/shop/print">
-                    <Button variant="ghost" size="sm" icon={ScanLine}>
-                      Open Terminal
-                    </Button>
-                  </Link>
+              {/* Metadata List */}
+              <div className="shop-card-info-list">
+                <div className="shop-card-info-row">
+                  <MapPin size={16} aria-hidden="true" />
+                  <span>{shop.address}, <strong>{shop.city}</strong></span>
                 </div>
+                <div className="shop-card-info-row">
+                  <Phone size={16} aria-hidden="true" />
+                  <span className="mono">{shop.phone}</span>
+                </div>
+                <div className="shop-card-info-row">
+                  <Calendar size={16} aria-hidden="true" />
+                  <span>Registered on {formatDate(shop.createdAt)}</span>
+                </div>
+              </div>
+
+              {/* Action Footer — polymorphic Button as Link */}
+              <div className="shop-card-actions">
+                <Button
+                  as={Link}
+                  to={`/shop/${shop.id}/edit`}
+                  state={{ shop }}
+                  variant="secondary"
+                  size="sm"
+                  icon={Edit}
+                >
+                  Edit Details
+                </Button>
+
+                <Button
+                  as={Link}
+                  to="/shop/print"
+                  variant="ghost"
+                  size="sm"
+                  icon={ScanLine}
+                >
+                  Open Terminal
+                </Button>
               </div>
             </Motion.div>
           ))}
@@ -197,4 +264,3 @@ const ShopDashboard = () => {
 };
 
 export default ShopDashboard;
-
