@@ -65,8 +65,9 @@ const CustomerVoucher = ({
   const isPrinted = jobStatus?.toUpperCase() === 'READY' || jobStatus?.toUpperCase() === 'PRINTED';
 
   // Live countdown hook
-  const { formatted, isExpired, isValid, targetDate } = useCountdown(expiresAt);
+  const { formatted, isExpired, isValid, targetDate, totalRemainingMs } = useCountdown(expiresAt);
   const isPinExpired = isExpired || isPrinted;
+  const isExpiringSoon = !isPinExpired && typeof totalRemainingMs === 'number' && totalRemainingMs > 0 && totalRemainingMs <= 3600000;
 
   // Normalize PIN to clean 6-character array (reset to '000000' once printed)
   const rawPin = isPrinted ? '000000' : String(secretKey || '').trim();
@@ -398,7 +399,7 @@ const CustomerVoucher = ({
             </span>
           </div>
 
-          {/* Expired / Active PIN notification banner */}
+          {/* Expired / Active / Expiring Soon PIN notification banner */}
           {isPinExpired ? (
             <div className="voucher-pin-expired-notice">
               <ShieldCheck size={13} aria-hidden="true" />
@@ -407,6 +408,11 @@ const CustomerVoucher = ({
                   ? 'PIN automatically reset to zero following counter pickup.'
                   : 'PIN validity window has lapsed and can no longer be used.'}
               </span>
+            </div>
+          ) : isExpiringSoon ? (
+            <div className="voucher-pin-expiring-soon-notice">
+              <AlertTriangle size={14} aria-hidden="true" />
+              <span>Pickup window closing soon! Present your PIN promptly at the counter.</span>
             </div>
           ) : (
             <div className="voucher-pin-save-reminder">
@@ -477,13 +483,13 @@ const CustomerVoucher = ({
           <div className="voucher-countdown-card">
             <div className="voucher-countdown-left">
               <div className="voucher-countdown-heading-row">
-                <div className={`voucher-countdown-icon-box ${isPinExpired ? 'expired' : 'active'}`}>
+                <div className={`voucher-countdown-icon-box ${isPinExpired ? 'expired' : isExpiringSoon ? 'warning' : 'active'}`}>
                   <Clock size={15} aria-hidden="true" />
                 </div>
                 <div className="voucher-countdown-title-wrap">
                   <span className="voucher-countdown-title">PIN Validity</span>
-                  <span className={`voucher-countdown-tag ${isPinExpired ? 'expired' : 'active'}`}>
-                    {isPinExpired ? (isPrinted ? 'Printed' : 'Expired') : 'Auto-Purge 24h'}
+                  <span className={`voucher-countdown-tag ${isPinExpired ? 'expired' : isExpiringSoon ? 'warning' : 'active'}`}>
+                    {isPinExpired ? (isPrinted ? 'Printed' : 'Expired') : isExpiringSoon ? 'Expiring Soon' : 'Auto-Purge 24h'}
                   </span>
                 </div>
               </div>
@@ -509,8 +515,8 @@ const CustomerVoucher = ({
                 {isPinExpired ? 'STATUS' : 'TIME REMAINING'}
               </span>
               <div
-                className={`voucher-countdown-timer-pill ${isPinExpired ? 'expired' : 'active'}`}
-                aria-label={isPinExpired ? 'PIN status: Expired' : `Time remaining: ${formatted}`}
+                className={`voucher-countdown-timer-pill ${isPinExpired ? 'expired' : isExpiringSoon ? 'warning' : 'active'}`}
+                aria-label={isPinExpired ? 'PIN status: Expired' : isExpiringSoon ? `PIN expiring soon: ${formatted} remaining` : `Time remaining: ${formatted}`}
               >
                 {isPinExpired ? 'Expired' : formatted}
               </div>

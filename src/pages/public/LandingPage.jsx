@@ -470,12 +470,12 @@ const LandingPage = () => {
             </div>
 
             <h1 className="pp-hero-title">
-              Your documents.<span className="pp-hero-title-break"><br /></span>Printed on your terms.
+              Your Documents.<span className="pp-hero-title-break"><br /></span>Printed on Your Terms.
             </h1>
 
             <p className="pp-hero-sub">
-              Upload your file, get a secure pickup PIN, and collect your prints at a nearby
-              participating print shop. No USB drives. No public-computer logins.
+              Upload your documents, get a secure pickup PIN, and collect your prints from a nearby
+              participating print shop. No USB drives. No hassle.
             </p>
 
             <div className="pp-hero-ctas">
@@ -650,11 +650,14 @@ const LandingPage = () => {
                       </div>
                     </div>
 
-                    <p className="pp-preview-note" style={isPrinted ? { color: 'var(--success)', fontWeight: 600 } : {}}>
-                      {isPrinted
-                        ? '✓ Print completed! Your document has been printed and the pickup PIN has expired and reset to zero.'
-                        : 'Show this 6-digit PIN to the operator at any partner print shop counter. Your document prints immediately without sharing a flash drive.'}
-                    </p>
+                    <div className={`pp-preview-notice ${isPrinted ? 'success' : ''}`} role="status">
+                      <Shield size={14} className="pp-preview-notice-icon" aria-hidden="true" />
+                      <span>
+                        {isPrinted
+                          ? 'Print completed! Your document has been printed and the pickup PIN has expired and reset to zero.'
+                          : 'Show this 6-digit PIN to the operator at any partner print shop counter. Your document prints immediately without sharing a flash drive.'}
+                      </span>
+                    </div>
 
                     {isRecent && (
                       <div style={{ marginTop: 12, textAlign: 'center' }}>
@@ -760,8 +763,10 @@ const LandingPage = () => {
           ].map(({ num, Icon, title, desc, badgeIcon: BadgeIcon, badgeText, badgeColor }) => (
             <div className="pp-step-card" key={num}>
               <div className="pp-step-top">
-                <span className="pp-step-num">{num}</span>
-                <Icon size={20} className="pp-step-icon" aria-hidden="true" />
+                <span className="pp-step-num">STEP {num}</span>
+                <div className="pp-step-icon-wrap">
+                  <Icon size={18} className="pp-step-icon" aria-hidden="true" />
+                </div>
               </div>
               <h3 className="pp-step-title">{title}</h3>
               <p className="pp-step-desc">{desc}</p>

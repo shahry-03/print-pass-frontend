@@ -58,8 +58,6 @@ const Navbar = ({ onMenuToggle, isSidebarOpen = false }) => {
         { icon: ScanLine, label: 'Print Station', path: '/shop/print' },
       ];
 
-  const totalItems = menuItems.length + 1; // +1 for Sign Out
-
   // ── Close dropdown on route change ──
   useEffect(() => {
     setMenuOpen(false);

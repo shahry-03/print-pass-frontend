@@ -242,9 +242,9 @@ const FileUploader = forwardRef(({
           <>
             <div className="file-uploader-icon">
               {isDragReject ? (
-                <AlertCircle size={26} aria-hidden="true" />
+                <AlertCircle size={28} aria-hidden="true" />
               ) : (
-                <Upload size={26} aria-hidden="true" />
+                <Upload size={28} aria-hidden="true" />
               )}
             </div>
             <h4>
@@ -253,14 +253,24 @@ const FileUploader = forwardRef(({
                 : isDragActive
                   ? 'Drop your files here'
                   : multiple
-                    ? 'Drag & drop your files'
-                    : 'Drag & drop your file'}
+                    ? 'Drag & drop your documents here'
+                    : 'Drag & drop your document here'}
             </h4>
-            <p className="text-muted">
-              or <span className="browse-link">browse</span> to choose {multiple ? 'files' : 'a file'}
+            <p className="text-muted text-sm" style={{ marginBottom: 14 }}>
+              Choose files from your phone, tablet, or computer
             </p>
+            <div className="file-uploader-btn-wrap" style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm file-uploader-browse-btn"
+                onClick={(e) => { e.stopPropagation(); open(); }}
+                disabled={disabled}
+              >
+                Browse Files
+              </button>
+            </div>
             <p id={helperId} className="text-xs text-muted file-uploader-hint">
-              {acceptText} — Max {formatFileSize(maxSize)}
+              Supports {acceptText} • Max {formatFileSize(maxSize)} per file
             </p>
           </>
         )}
