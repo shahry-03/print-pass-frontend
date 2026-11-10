@@ -213,7 +213,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 .upload-card-title { text-align: center; margin-bottom: 24px; }
@@ -322,204 +323,997 @@
 .upload-switch-btn:hover:not(:disabled) { background: var(--accent-bg); }
 .upload-switch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ── Print Station ── */
-.print-station { max-width: 560px; margin: 0 auto; }
+/* ══════════════════════════════════════════════
+   PRINT STATION — Modern SaaS Terminal
+   ══════════════════════════════════════════════ */
 
-.print-station-title {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--text-primary);
-}
-.print-station-title svg { color: var(--accent); }
-
-.print-station-card { text-align: center; }
-.print-station-card-title { margin-bottom: 8px; }
-
-.pin-input-wrapper {
+.ps-workspace {
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: var(--space-xl) 0;
+  flex-direction: column;
+  gap: 22px;
 }
 
-.pin-char-input {
-  width: 56px;
-  height: 68px;
-  text-align: center;
-  font-size: 1.75rem;
-  font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  background: var(--bg-glass);
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
-}
-.pin-char-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-  background: var(--bg-glass-hover);
-}
-.pin-char-input.pin-char-input-error {
-  border-color: var(--danger);
-  box-shadow: 0 0 0 3px var(--danger-bg);
-  color: var(--danger);
-}
-.pin-char-input:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.print-station-error {
+/* ── Page Header ── */
+.ps-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: var(--danger-bg);
-  color: var(--danger);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  text-align: left;
-}
-
-.print-station-meta {
-  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  margin-bottom: 16px;
+  padding-bottom: 4px;
 }
 
-/* ── Print Station Conversion Status Card ── */
-.print-station-status-card {
+.ps-header-left {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  border-radius: var(--radius-md);
+  flex-direction: column;
+  gap: 6px;
   text-align: left;
-  border: 1px solid var(--border);
-  background: var(--card);
-  transition: all var(--transition-normal);
 }
 
-.print-station-status-card.pending {
-  border-color: rgba(59, 130, 246, 0.35);
-  background: rgba(59, 130, 246, 0.05);
-}
-
-.print-station-status-card.success {
-  border-color: rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.05);
-}
-
-.print-station-status-card.failed {
-  border-color: rgba(239, 68, 68, 0.35);
-  background: rgba(239, 68, 68, 0.05);
-}
-
-.print-station-status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-full);
-  background: var(--bg-glass);
-  flex-shrink: 0;
-}
-
-.print-station-status-icon.success {
-  color: var(--success);
-  background: var(--success-bg);
-}
-
-.print-station-status-icon.failed {
-  color: var(--danger);
-  background: var(--danger-bg);
-}
-
-.print-station-status-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.print-station-status-title {
-  font-size: 0.825rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.print-station-status-desc {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
-.print-station-status-badge {
+.ps-header-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 0.725rem;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-}
-
-.print-station-status-badge.pending {
-  background: rgba(59, 130, 246, 0.15);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--primary);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-subtle-border);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  width: fit-content;
 }
 
-.print-station-status-badge.success {
-  background: var(--success-bg);
-  color: var(--success);
-  border: 1px solid var(--success-border);
+.ps-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0;
 }
 
-.print-station-status-badge.failed {
-  background: var(--danger-bg);
+.ps-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.ps-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ps-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+}
+
+.ps-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-bg);
+}
+
+/* ── PIN Entry Container & Hero Card ── */
+.ps-pin-entry-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 660px;
+  margin: 12px auto 0;
+  width: 100%;
+}
+
+.ps-pin-card {
+  padding: 36px 32px;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.ps-pin-card-header {
+  margin-bottom: 24px;
+}
+
+.ps-pin-icon-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  border: 1px solid var(--primary-subtle-border);
+}
+
+.ps-pin-card-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.ps-pin-card-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.ps-pin-input-group {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 24px 0 20px;
+}
+
+.ps-pin-digit-box {
+  width: 54px;
+  height: 68px;
+  text-align: center;
+  font-size: 1.85rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  background: var(--bg-tertiary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.ps-pin-digit-box:focus {
+  border-color: var(--primary);
+  background: var(--card);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.ps-pin-digit-box.is-filled {
+  background: var(--card);
+  border-color: var(--border-strong);
+}
+
+.ps-pin-digit-box.is-error {
+  border-color: var(--danger);
   color: var(--danger);
-  border: 1px solid var(--danger-border);
+  background: var(--danger-bg);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }
 
-.print-station-pin-row {
+.ps-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  color: var(--danger);
+  font-size: 0.825rem;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.ps-pin-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-top: 8px;
 }
 
-.print-station-actions {
+.ps-fetch-btn {
+  height: 48px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 12px rgba(49, 94, 246, 0.25);
+}
+
+.ps-cancel-link {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.825rem;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 4px;
+}
+.ps-cancel-link:hover {
+  color: var(--text-primary);
+}
+
+/* ── Workflow Guide (Empty State) ── */
+.ps-workflow-guide {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ps-workflow-header {
   display: flex;
-  gap: 12px;
-  justify-content: center;
   align-items: center;
+  gap: 8px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 16px;
+}
+
+.ps-workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ps-workflow-step-card {
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+
+.ps-step-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-subtle-border);
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.ps-workflow-step-card h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.ps-workflow-step-card p {
+  font-size: 0.775rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── Loading Skeleton ── */
+.ps-skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.ps-skeleton-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.ps-skeleton-card {
+  height: 90px;
+  background: linear-gradient(90deg, var(--secondary) 25%, var(--border) 50%, var(--secondary) 75%);
+  background-size: 200% 100%;
+  animation: ps-shimmer 1.5s infinite;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.ps-skeleton-banner {
+  height: 60px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--secondary) 25%, var(--border) 50%, var(--secondary) 75%);
+  background-size: 200% 100%;
+  animation: ps-shimmer 1.5s infinite;
+}
+
+.ps-skeleton-table {
+  height: 180px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--secondary) 25%, var(--border) 50%, var(--secondary) 75%);
+  background-size: 200% 100%;
+  animation: ps-shimmer 1.5s infinite;
+  border: 1px solid var(--border);
+}
+
+@keyframes ps-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Populated State: Verified Workspace ── */
+.ps-verified-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Top Active Job Command Bar */
+.ps-active-job-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   flex-wrap: wrap;
 }
 
-.print-station-instant-btn {
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
-  font-weight: 700;
+.ps-active-job-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.print-station-reset {
-  margin-top: 20px;
+.ps-verified-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.ps-active-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+}
+
+.ps-active-pin-label {
+  font-size: 0.725rem;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.ps-active-pin-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.05em;
+}
+
+.ps-pin-copy-icon-btn {
   background: none;
   border: none;
-  color: var(--text-tertiary);
-  font-size: 0.85rem;
+  color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 2px 4px;
+  display: inline-flex;
+  align-items: center;
   border-radius: var(--radius-sm);
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
+}
+.ps-pin-copy-icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--secondary);
+}
+
+.ps-active-msg {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.ps-active-job-right {
+  display: flex;
+  align-items: center;
+}
+
+.ps-switch-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.ps-switch-pin-btn:hover {
+  background: var(--secondary);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+/* Metrics Overview Grid (4 Cards - Zero cramping/overlap) */
+.ps-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.ps-metric-card {
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  transition: border-color var(--transition-fast);
+}
+.ps-metric-card:hover {
+  border-color: var(--border-hover);
+}
+
+.ps-metric-card.highlight {
+  border-color: var(--primary-subtle-border);
+  background: linear-gradient(180deg, var(--card) 0%, var(--primary-soft) 100%);
+}
+
+.ps-metric-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+.ps-metric-pin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.ps-metric-pin-digits {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.ps-metric-copy-btn {
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.ps-metric-copy-btn:hover {
+  background: var(--border);
+  color: var(--text-primary);
+}
+
+.ps-metric-number {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 4px 0 2px;
+  letter-spacing: -0.02em;
+}
+.ps-metric-number.highlight {
+  color: var(--primary);
+}
+
+.ps-metric-unit {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.ps-metric-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 4px 0 2px;
+}
+.ps-metric-countdown.expired {
+  color: var(--danger);
+}
+
+.ps-metric-subtext {
+  font-size: 0.725rem;
+  color: var(--text-tertiary);
+}
+
+/* Status Banner */
+.ps-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.ps-status-banner.success {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--text-primary);
+}
+
+.ps-status-banner.pending,
+.ps-status-banner.processing {
+  background: rgba(49, 94, 246, 0.06);
+  border-color: rgba(49, 94, 246, 0.25);
+}
+
+.ps-status-banner.warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+}
+
+.ps-status-banner.failed {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+
+.ps-status-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ps-status-banner.success .ps-status-banner-icon { color: var(--success); }
+.ps-status-banner.pending .ps-status-banner-icon,
+.ps-status-banner.processing .ps-status-banner-icon { color: var(--primary); }
+.ps-status-banner.warning .ps-status-banner-icon { color: var(--warning); }
+.ps-status-banner.failed .ps-status-banner-icon { color: var(--danger); }
+
+.ps-status-banner-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ps-status-banner-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.ps-status-banner-desc {
+  font-size: 0.785rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.ps-status-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ps-status-chip.success {
+  background: #FFFFFF;
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+.ps-status-chip.pending {
+  background: #FFFFFF;
+  color: var(--primary);
+  border: 1px solid var(--primary-subtle-border);
+}
+.ps-status-chip.warning {
+  background: #FFFFFF;
+  color: var(--warning);
+  border: 1px solid var(--warning-border);
+}
+.ps-status-chip.failed {
+  background: #FFFFFF;
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+/* Primary Action Panel */
+.ps-action-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.ps-action-panel-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ps-action-panel-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ps-instant-print-btn {
+  height: 44px;
+  padding: 0 24px;
+  font-weight: 700;
+  font-size: 0.925rem;
+  box-shadow: 0 4px 14px rgba(49, 94, 246, 0.28);
+}
+
+.ps-zip-btn {
+  height: 44px;
+  padding: 0 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.ps-mark-printed-btn {
+  height: 44px;
+  padding: 0 18px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+}
+.ps-mark-printed-btn:hover {
+  border-color: var(--border-hover);
+  background: var(--secondary);
+  color: var(--text-primary);
+}
+
+/* Customer Files Management Section */
+.ps-files-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.ps-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ps-files-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-files-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ps-files-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--primary-subtle-border);
+}
+
+.ps-files-header-hint {
+  font-size: 0.775rem;
+  color: var(--text-tertiary);
+}
+
+.ps-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ps-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+.ps-file-item:hover {
+  border-color: var(--border-hover);
+  background: var(--secondary);
+}
+
+.ps-file-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ps-file-type-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.ps-file-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ps-file-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ps-file-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ps-file-ext-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-tertiary);
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.ps-file-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ps-file-pages-pill {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--primary-subtle-border);
+}
+.ps-file-pages-pill.pending {
+  color: var(--text-tertiary);
+  background: var(--card);
+  border-color: var(--border);
+}
+
+.ps-file-status-pill {
+  font-size: 0.725rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.ps-file-status-pill.success {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.ps-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ps-file-item.is-single {
+  padding: 16px 20px;
+  background: var(--card);
+}
+.ps-file-item.is-single .ps-file-name {
+  font-size: 0.95rem;
+}
+
+.ps-single-instant-btn {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(49, 94, 246, 0.22);
+}
+.ps-single-instant-btn:hover {
+  background: var(--primary-hover) !important;
+}
+
+.ps-empty-files {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* ── Modal Summary Content ── */
+.ps-modal-body {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ps-modal-summary-box {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ps-modal-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.ps-modal-pin {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.ps-modal-note {
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+
+/* ── Responsive Print Station ── */
+@media (max-width: 1024px) {
+  .ps-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ps-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ps-workflow-steps {
+    grid-template-columns: 1fr;
+  }
+  .ps-action-panel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .ps-action-panel-left,
+  .ps-action-panel-right {
+    width: 100%;
+    flex-direction: column;
+  }
+  .ps-action-panel button {
+    width: 100%;
+  }
+  .ps-file-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ps-file-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .ps-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .ps-pin-input-group {
+    gap: 6px;
+  }
+  .ps-pin-digit-box {
+    width: 42px;
+    height: 56px;
+    font-size: 1.45rem;
+  }
+  .ps-pin-card {
+    padding: 24px 18px;
+  }
+  .ps-file-actions button,
+  .ps-file-actions a {
+    flex: 1;
+    text-align: center;
+  }
 }
 .print-station-reset:hover:not(:disabled) { color: var(--text-primary); }
 .print-station-reset:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -536,6 +1330,27 @@
   justify-content: center;
   margin: 0 auto 16px;
   color: var(--success);
+}
+
+/* ── Job Verified Preview Card ── */
+.job-verified-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.job-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+  font-size: 0.825rem;
+  font-weight: 600;
 }
 
 .file-preview-card { padding: var(--space-xl); text-align: center; }
@@ -575,6 +1390,7 @@
 .shop-edit-save { flex: 1; min-width: 160px; }
 
 /* ── Customer Voucher ── */
+/* ── Customer Voucher ── */
 .customer-voucher-card {
   padding: 32px 28px;
   background: var(--card);
@@ -582,42 +1398,51 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   max-width: 560px;
+  width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
-.voucher-header { text-align: center; margin-bottom: 24px; }
+.voucher-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
 
 .voucher-status-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 12px;
+  margin: 0 auto 14px;
+  transition: all var(--transition-fast);
 }
 .voucher-status-icon.success {
   background: var(--success-bg);
   color: var(--success);
-  border: 1px solid var(--success-border);
+  border: 1.5px solid var(--success-border);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.12);
 }
 .voucher-status-icon.expired {
   background: var(--danger-bg);
   color: var(--danger);
-  border: 1px solid var(--danger-border);
+  border: 1.5px solid var(--danger-border);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.12);
 }
 
 .voucher-title {
   font-size: 1.55rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 .voucher-subtitle {
   font-size: 0.9rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
   max-width: 440px;
   margin: 0 auto;
 }
@@ -653,14 +1478,58 @@
   margin-bottom: 24px;
 }
 
+/* Queued Documents Top Stub */
 .voucher-ticket-stub {
-  padding: 16px 20px;
+  padding: 18px 20px;
 }
 
-.voucher-stub-file-row {
+.voucher-stub-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.voucher-stub-heading-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.voucher-stub-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.voucher-stub-count-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.voucher-stub-badge-box {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.voucher-stub-file-card {
+  display: flex;
+  align-items: flex-start;
   gap: 14px;
+  width: 100%;
+  min-width: 0;
 }
 
 .voucher-file-icon-box {
@@ -673,91 +1542,138 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid var(--primary-subtle-border);
 }
 
-.voucher-file-meta-content {
+.voucher-file-details {
   flex: 1;
   min-width: 0;
 }
 
-.voucher-file-eyebrow {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-tertiary);
-  display: block;
-  margin-bottom: 2px;
-}
-
 .voucher-file-name {
-  font-size: 0.925rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
+  line-height: 1.45;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+  margin-bottom: 6px;
 }
 
-.voucher-file-specs-row {
+.voucher-file-specs-grid {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
-  font-size: 0.775rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
 }
 
-.voucher-page-tag {
+.voucher-spec-pill {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   font-size: 0.75rem;
-  font-weight: 600;
-  padding: 1px 7px;
+  font-weight: 500;
+  padding: 3px 9px;
   border-radius: var(--radius-sm);
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  line-height: 1.4;
+  white-space: nowrap;
+  transition: border-color var(--transition-fast);
 }
-
-.voucher-page-tag.pending {
-  color: var(--primary);
-  background: var(--primary-soft);
-  border: 1px solid var(--primary-subtle-border);
-}
-
-.voucher-page-tag.success {
-  color: var(--success);
+.voucher-spec-pill.success {
   background: var(--success-bg);
-  border: 1px solid var(--success-border);
+  border-color: var(--success-border);
+  color: var(--success);
+  font-weight: 600;
 }
-
-.voucher-page-tag.failed {
-  color: var(--danger);
+.voucher-spec-pill.pending {
+  background: var(--primary-soft);
+  border-color: var(--primary-subtle-border);
+  color: var(--primary);
+  font-weight: 500;
+}
+.voucher-spec-pill.warning {
+  background: var(--warning-bg);
+  border-color: var(--warning-border);
+  color: var(--warning);
+  font-weight: 600;
+}
+.voucher-spec-pill.failed {
   background: var(--danger-bg);
-  border: 1px solid var(--danger-border);
+  border-color: var(--danger-border);
+  color: var(--danger);
+  font-weight: 600;
+}
+.voucher-spec-pill.date {
+  color: var(--text-tertiary);
 }
 
 .voucher-processing-banner {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px 14px;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 14px;
   border-radius: var(--radius-md);
-  font-size: 0.8rem;
-  line-height: 1.4;
+  font-size: 0.825rem;
+  line-height: 1.45;
   text-align: left;
 }
 
-.voucher-processing-banner.pending {
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+.voucher-processing-banner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.voucher-processing-banner.pending,
+.voucher-processing-banner.processing {
+  background: rgba(49, 94, 246, 0.08);
+  border: 1px solid rgba(49, 94, 246, 0.25);
   color: var(--text-primary);
 }
 
-.voucher-processing-banner.pending strong {
+.voucher-processing-banner.pending strong,
+.voucher-processing-banner.processing strong {
   color: var(--primary);
   display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.voucher-processing-banner.success {
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
+  color: var(--text-primary);
+}
+
+.voucher-processing-banner.success strong {
+  color: var(--success);
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.voucher-processing-banner.warning {
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  color: var(--text-primary);
+}
+
+.voucher-processing-banner.warning strong {
+  color: var(--warning);
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .voucher-processing-banner.failed {
@@ -768,13 +1684,16 @@
 
 .voucher-processing-banner.failed strong {
   display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 2px;
 }
 
 .voucher-processing-text span {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.775rem;
   color: var(--text-secondary);
-  margin-top: 2px;
+  line-height: 1.4;
 }
 
 /* Ticket Perforation & Notches */
@@ -782,8 +1701,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 22px;
+  height: 24px;
   margin: 0;
+  overflow: hidden;
 }
 
 .voucher-ticket-notch {
@@ -816,21 +1736,22 @@
   margin: 0 18px;
   border-top: 2px dashed var(--border-strong);
   height: 0;
+  opacity: 0.85;
 }
 
 /* PIN Centerpiece */
 .voucher-pin-section {
-  padding: 20px 24px;
+  padding: 22px 24px;
   text-align: center;
   transition: all var(--transition-normal);
 }
-.voucher-pin-section.expired { opacity: 0.85; }
+.voucher-pin-section.expired { opacity: 0.95; }
 
 .voucher-pin-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   padding: 0 4px;
 }
 
@@ -850,20 +1771,56 @@
   font-weight: 500;
   color: var(--text-secondary);
   background: var(--card);
-  padding: 3px 8px;
+  padding: 3px 9px;
   border-radius: var(--radius-full);
   border: 1px solid var(--border);
 }
 
+.voucher-pin-save-reminder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-subtle-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.785rem;
+  color: var(--primary);
+  font-weight: 500;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.voucher-pin-save-reminder svg { flex-shrink: 0; }
+
+.voucher-pin-expired-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.785rem;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  text-align: center;
+}
+.voucher-pin-expired-notice svg { flex-shrink: 0; color: var(--text-tertiary); }
+
 .voucher-pin-boxes {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 18px;
+  width: 100%;
+  margin: 16px 0 20px;
 }
 
 .voucher-pin-digit {
-  width: 52px;
+  flex: 1;
+  min-width: 0;
+  max-width: 54px;
   height: 66px;
   display: flex;
   align-items: center;
@@ -877,79 +1834,219 @@
   border-radius: var(--radius-md);
   color: var(--primary);
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .voucher-pin-digit:hover {
   transform: translateY(-2px);
   border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(49, 94, 246, 0.14);
 }
 
+.voucher-pin-digit.expired,
 .voucher-pin-section.expired .voucher-pin-digit {
   color: var(--text-disabled);
   border-color: var(--border);
+  background: var(--bg-tertiary);
+  box-shadow: none;
+}
+.voucher-pin-digit.expired:hover,
+.voucher-pin-section.expired .voucher-pin-digit:hover {
+  transform: none;
+  border-color: var(--border);
+  box-shadow: none;
 }
 
 .voucher-utility-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 10px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
-.voucher-copy-btn {
+.voucher-primary-action-btn {
+  width: 100%;
+  min-height: 50px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  min-width: 120px;
+  font-size: 0.975rem;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(49, 94, 246, 0.25);
+  transition: all var(--transition-fast);
+}
+.voucher-primary-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(49, 94, 246, 0.32);
+}
+.voucher-primary-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(49, 94, 246, 0.2);
 }
 
-/* Validity & Countdown Box */
+.voucher-secondary-actions-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.voucher-secondary-action-btn {
+  width: 100%;
+  min-height: 46px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  justify-content: center;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  transition: all var(--transition-fast);
+}
+.voucher-secondary-action-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.voucher-secondary-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Validity & Countdown Box (2-Zone Card) */
 .voucher-countdown-box {
   margin: 0 20px 16px;
-  padding: 12px 18px;
+  padding: 16px 20px;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
 }
 
-.voucher-countdown-row {
+.voucher-countdown-box.box-expired {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
+.voucher-countdown-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
-.voucher-countdown-label {
+.voucher-countdown-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.voucher-countdown-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.voucher-countdown-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.voucher-countdown-icon-box.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid var(--primary-subtle-border);
+}
+.voucher-countdown-icon-box.expired {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+.voucher-countdown-title-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.825rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  flex-wrap: wrap;
 }
 
-.voucher-countdown-value {
-  font-family: 'JetBrains Mono', monospace;
+.voucher-countdown-title {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--primary);
-  padding: 3px 10px;
+  color: var(--text-primary);
+}
+
+.voucher-countdown-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
+}
+.voucher-countdown-tag.active {
   background: var(--primary-soft);
-  border-radius: var(--radius-sm);
+  color: var(--primary);
   border: 1px solid var(--primary-subtle-border);
 }
-
-.voucher-countdown-value.expired {
-  color: var(--danger);
+.voucher-countdown-tag.expired {
   background: var(--danger-bg);
-  border-color: var(--danger-border);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
 }
 
-.voucher-expiry-subtext {
-  font-size: 0.725rem;
+.voucher-countdown-timestamp {
+  font-size: 0.785rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  padding-left: 38px;
+}
+.voucher-countdown-timestamp strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.voucher-countdown-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.voucher-countdown-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  margin-top: 6px;
-  text-align: right;
+  margin-bottom: 4px;
+}
+
+.voucher-countdown-timer-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.925rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.voucher-countdown-timer-pill.active {
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1.5px solid var(--primary-subtle-border);
+  box-shadow: 0 1px 2px rgba(49, 94, 246, 0.06);
+}
+.voucher-countdown-timer-pill.expired {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1.5px solid var(--danger-border);
 }
 
 /* 3-Step Pickup Instructions */
@@ -990,12 +2087,12 @@
 }
 
 .voucher-step-marker {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--primary-soft);
   color: var(--primary);
-  font-size: 0.725rem;
+  font-size: 0.75rem;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -1005,9 +2102,18 @@
 
 .voucher-actions-footer {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.voucher-footer-btn {
+  width: 100%;
+  min-height: 46px;
   justify-content: center;
-  flex-wrap: wrap;
+}
+.voucher-home-btn {
+  min-height: 44px;
 }
 
 .pin-result-card { text-align: center; padding: var(--space-2xl); }
@@ -1024,30 +2130,275 @@
   color: var(--success);
 }
 
-/* ── Responsive ── */
+/* ══════════════════════════════════════════════
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ══════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .dashboard-grid { grid-template-columns: 1fr; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .pin-char-input { width: 44px; height: 56px; font-size: 1.35rem; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
+  .upload-page {
+    min-height: 100vh;
+    padding: 16px 16px 36px;
+    align-items: flex-start;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .upload-card {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+  }
+
+  .upload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    min-height: 44px;
+  }
+
+  .customer-voucher-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 22px 16px;
+    border-radius: 20px;
+    box-sizing: border-box;
+    margin: 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .voucher-header {
+    margin-bottom: 18px;
+  }
+
+  .voucher-status-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 12px;
+  }
+
+  .voucher-title {
+    font-size: 1.38rem;
+  }
+
+  .voucher-subtitle {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .voucher-ticket-body {
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+
+  .voucher-ticket-stub {
+    padding: 14px 14px;
+  }
+
+  .voucher-stub-header {
+    margin-bottom: 10px;
+  }
+
+  .voucher-stub-file-card {
+    gap: 12px;
+  }
+
+  .voucher-file-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+  }
+
+  .voucher-file-name {
+    font-size: 0.92rem;
+    margin-bottom: 5px;
+  }
+
+  .voucher-file-specs-grid {
+    gap: 5px;
+  }
+
+  .voucher-spec-pill {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+  }
+
+  .voucher-pin-section {
+    padding: 16px 12px;
+  }
+
+  .voucher-pin-boxes {
+    gap: clamp(4px, 1.8vw, 8px);
+    margin: 14px 0 18px;
+  }
+
+  .voucher-pin-digit {
+    height: clamp(52px, 14vw, 62px);
+    font-size: clamp(1.35rem, 5.5vw, 1.75rem);
+    border-radius: var(--radius-sm);
+  }
+
+  .voucher-utility-actions {
+    gap: 10px;
+    width: 100%;
+  }
+
+  .voucher-primary-action-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.925rem;
+  }
+
+  .voucher-secondary-actions-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .voucher-secondary-action-btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.85rem;
+  }
+
+  .voucher-countdown-box {
+    margin: 0 12px 14px;
+    padding: 12px 14px;
+  }
+
+  .voucher-countdown-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .voucher-countdown-timestamp {
+    padding-left: 0;
+    margin-top: 4px;
+  }
+
+  .voucher-countdown-right {
+    align-items: stretch;
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+    margin-top: 2px;
+  }
+
+  .voucher-countdown-eyebrow {
+    text-align: left;
+  }
+
+  .voucher-countdown-timer-pill {
+    width: 100%;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 0.925rem;
+  }
+
+  .voucher-steps-guide {
+    margin: 0 12px 18px;
+    padding: 12px 14px;
+  }
+
+  .voucher-actions-footer {
+    gap: 10px;
+    width: 100%;
+  }
+
+  .voucher-actions-footer .btn {
+    width: 100%;
+    min-height: 46px;
+  }
+
   .shop-edit-card { padding: 24px 20px; }
   .shop-edit-actions { flex-direction: column; }
   .shop-edit-save { width: 100%; }
+
+  .print-station-summary-grid { grid-template-columns: 1fr; }
+  .print-station-actions { flex-direction: column; width: 100%; }
+  .print-station-actions button,
+  .print-station-actions a { width: 100%; }
+  .print-station-file-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .print-station-file-buttons { width: 100%; justify-content: flex-end; }
 }
 
-@media (max-width: 480px) {
-  .customer-voucher-card { padding: 20px 14px; }
-  .voucher-ticket-stub { padding: 12px 14px; }
-  .voucher-pin-section { padding: 16px 12px; }
-  .voucher-pin-boxes { gap: 5px; }
-  .voucher-pin-digit { width: 38px; height: 50px; font-size: 1.35rem; }
-  .voucher-countdown-box { margin: 0 12px 14px; padding: 10px 14px; }
-  .voucher-steps-guide { margin: 0 12px 16px; padding: 12px 14px; }
-  .voucher-utility-actions { flex-direction: column; width: 100%; }
-  .voucher-utility-actions button { width: 100%; }
-  .voucher-actions-footer { flex-direction: column; width: 100%; }
-  .voucher-actions-footer a,
-  .voucher-actions-footer button { width: 100%; }
+@media (max-width: 350px) {
+  .upload-page {
+    padding: 12px 10px 28px;
+  }
+
+  .customer-voucher-card {
+    padding: 16px 10px;
+    border-radius: 16px;
+  }
+
+  .voucher-status-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+  }
+
+  .voucher-title {
+    font-size: 1.25rem;
+  }
+
+  .voucher-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .voucher-ticket-stub {
+    padding: 12px 10px;
+  }
+
+  .voucher-stub-file-card {
+    gap: 10px;
+  }
+
+  .voucher-file-icon-box {
+    width: 34px;
+    height: 34px;
+  }
+
+  .voucher-pin-section {
+    padding: 12px 6px;
+  }
+
+  .voucher-pin-boxes {
+    gap: 3px;
+    margin: 10px 0 14px;
+  }
+
+  .voucher-pin-digit {
+    height: 48px;
+    font-size: 1.2rem;
+  }
+
+  .voucher-countdown-box {
+    margin: 0 6px 12px;
+    padding: 10px 10px;
+  }
+
+  .voucher-countdown-timer-pill {
+    font-size: 0.85rem;
+    padding: 5px 8px;
+  }
+
+  .voucher-steps-guide {
+    margin: 0 6px 14px;
+    padding: 10px 10px;
+  }
+
+  .voucher-secondary-actions-row {
+    grid-template-columns: 1fr;
+  }
 }

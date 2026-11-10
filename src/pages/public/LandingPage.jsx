@@ -13,6 +13,7 @@ import ThemeToggle from '../../components/common/ThemeToggle';
 import { copyToClipboard, formatFileSize } from '../../utils/helpers';
 import { loadVoucher } from '../../utils/voucherStorage';
 import useCountdown from '../../hooks/useCountdown';
+import { useJobStatusPolling } from '../../hooks/useJobStatusPolling';
 
 // ═══════════════════════════════════════════════════════════
 // Constants
@@ -251,25 +252,38 @@ const LandingPage = () => {
     };
   }, []);
 
+  // ── Auto-poll public job status (detects when printed by shop) ──
+  const handleVoucherUpdate = useCallback((updatedVoucher) => {
+    setRecentVoucher(updatedVoucher);
+  }, []);
+
+  useJobStatusPolling(recentVoucher, handleVoucherUpdate);
+
   const isRecent = Boolean(recentVoucher?.secretKey);
+  const isPrinted = recentVoucher?.jobStatus === 'READY' || recentVoucher?.jobStatus === 'PRINTED';
   const activeFileName = isRecent ? recentVoucher.fileName : 'Course_Syllabus_2026.pdf';
-  const activePin = isRecent ? String(recentVoucher.secretKey).trim() : '482915';
+  const activePin = isRecent ? (isPrinted ? '000000' : String(recentVoucher.secretKey).trim()) : '482915';
   const activeSpecs = isRecent
     ? (recentVoucher.fileSize ? formatFileSize(recentVoucher.fileSize) : 'Uploaded Document')
     : '1.4 MB • 14 Pages • Duplex B&W';
 
   const countdown = useCountdown(isRecent ? recentVoucher.expiresAt : null);
   const isExpired = isRecent && countdown.isExpired;
+  const isPinExpired = isExpired || (isRecent && isPrinted);
 
   // ── Copy PIN ──
   const handleCopyPin = useCallback(async () => {
+    if (isPinExpired) {
+      toast.error('This PIN has expired and cannot be used.');
+      return;
+    }
     const success = await copyToClipboard(activePin);
     if (success) {
       toast.success(isRecent ? `PIN copied: ${activePin}` : `Sample PIN copied: ${activePin}`);
     } else {
       toast.error('Failed to copy PIN');
     }
-  }, [activePin, isRecent]);
+  }, [activePin, isRecent, isPinExpired]);
 
   // ── Share (native share sheet on mobile, copy link fallback) ──
   const handleShare = useCallback(async () => {
@@ -333,18 +347,24 @@ const LandingPage = () => {
 
           <div className="pp-nav-actions">
             <ThemeToggle />
-            <Link to="/login">
-              <Button variant="ghost" size="sm">Log In</Button>
-            </Link>
-            <Link to="/upload">
-              <Button size="sm" icon={Upload}>Upload Document</Button>
-            </Link>
+
+            {/* Desktop Only Actions — hidden on mobile */}
+            <div className="pp-nav-desktop-actions">
+              <Button as={Link} to="/login" variant="ghost" size="sm">
+                Log In
+              </Button>
+              <Button as={Link} to="/upload" size="sm" icon={Upload}>
+                Upload Document
+              </Button>
+            </div>
+
+            {/* Mobile Hamburger Menu Button — visible on mobile */}
             <button
               ref={mobileButtonRef}
               type="button"
               className="pp-mobile-menu-btn"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
               aria-expanded={mobileOpen}
               aria-controls="mobile-drawer"
             >
@@ -353,32 +373,89 @@ const LandingPage = () => {
           </div>
         </nav>
 
-        {/* Mobile Drawer */}
+        {/* Mobile Drawer & Backdrop */}
         <AnimatePresence>
           {mobileOpen && (
-            <Motion.div
-              id="mobile-drawer"
-              ref={mobileMenuRef}
-              className="pp-mobile-drawer"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18 }}
-            >
-              {NAV_LINKS.map((link) => (
-                <a key={link.href} href={link.href} onClick={closeMobileMenu}>
-                  {link.label}
-                </a>
-              ))}
-              <div className="pp-mobile-drawer-actions">
-                <Link to="/upload" onClick={closeMobileMenu}>
-                  <Button fullWidth icon={Upload}>Upload Document</Button>
-                </Link>
-                <Link to="/login" onClick={closeMobileMenu}>
-                  <Button variant="secondary" fullWidth>Log In to Shop</Button>
-                </Link>
-              </div>
-            </Motion.div>
+            <>
+              <Motion.div
+                className="pp-mobile-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={closeMobileMenu}
+                aria-hidden="true"
+              />
+              <Motion.div
+                id="mobile-drawer"
+                ref={mobileMenuRef}
+                className="pp-mobile-drawer"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Navigation menu"
+              >
+                <div className="pp-mobile-drawer-nav">
+                  {NAV_LINKS.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      className={`pp-mobile-drawer-link ${activeSection === link.href ? 'active' : ''}`}
+                      onClick={closeMobileMenu}
+                    >
+                      <span>{link.label}</span>
+                      <ArrowRight size={14} className="pp-mobile-link-arrow" aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+
+                <div className="pp-mobile-drawer-actions">
+                  <Button
+                    as={Link}
+                    to="/upload"
+                    fullWidth
+                    size="lg"
+                    icon={Upload}
+                    onClick={closeMobileMenu}
+                    className="pp-mobile-primary-cta"
+                  >
+                    Upload a Document
+                  </Button>
+                  <Button
+                    as={Link}
+                    to="/login"
+                    variant="secondary"
+                    fullWidth
+                    size="md"
+                    icon={Store}
+                    onClick={closeMobileMenu}
+                  >
+                    Log In to Shop
+                  </Button>
+                  <Button
+                    as={Link}
+                    to="/register"
+                    variant="ghost"
+                    fullWidth
+                    size="sm"
+                    icon={ArrowRight}
+                    onClick={closeMobileMenu}
+                  >
+                    Partner Print Shop Sign Up
+                  </Button>
+                </div>
+
+                <div className="pp-mobile-drawer-footer">
+                  <div className="pp-mobile-drawer-tag">
+                    <Shield size={13} aria-hidden="true" />
+                    <span>Private &amp; encrypted • Auto-purged after 24h</span>
+                  </div>
+                </div>
+              </Motion.div>
+            </>
           )}
         </AnimatePresence>
       </header>
@@ -393,7 +470,7 @@ const LandingPage = () => {
             </div>
 
             <h1 className="pp-hero-title">
-              Your documents.<br />Printed on your terms.
+              Your documents.<span className="pp-hero-title-break"><br /></span>Printed on your terms.
             </h1>
 
             <p className="pp-hero-sub">
@@ -402,18 +479,32 @@ const LandingPage = () => {
             </p>
 
             <div className="pp-hero-ctas">
-              <Link to="/upload">
-                <Button size="lg" icon={Upload}>Upload a Document</Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="secondary" size="lg" icon={ArrowRight}>For Print Shops</Button>
-              </Link>
+              <Button
+                as={Link}
+                to="/upload"
+                size="lg"
+                icon={Upload}
+                className="pp-hero-btn pp-hero-primary-btn"
+              >
+                Upload a Document
+              </Button>
+              <Button
+                as={Link}
+                to="/register"
+                variant="secondary"
+                size="lg"
+                icon={ArrowRight}
+                className="pp-hero-btn pp-hero-secondary-btn"
+              >
+                For Print Shops
+              </Button>
               <Button
                 variant="ghost"
                 size="lg"
                 icon={Share2}
                 onClick={handleShare}
                 aria-label="Share PrintPass"
+                className="pp-hero-btn pp-hero-share-btn"
               >
                 Share
               </Button>
@@ -455,16 +546,32 @@ const LandingPage = () => {
                 </div>
                 <div
                   className="pp-preview-badge"
-                  style={isExpired ? { background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' } : {}}
+                  style={
+                    isExpired
+                      ? { background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }
+                      : isPrinted
+                        ? { background: 'var(--success-bg)', color: 'var(--success)', borderColor: 'var(--success-border)' }
+                        : {}
+                  }
                 >
                   <span
                     className="pp-preview-badge-dot"
                     aria-hidden="true"
-                    style={isExpired ? { backgroundColor: 'var(--danger)' } : {}}
+                    style={
+                      isExpired
+                        ? { backgroundColor: 'var(--danger)' }
+                        : isPrinted
+                          ? { backgroundColor: 'var(--success)' }
+                          : {}
+                    }
                   />
                   <span>
                     {previewTab === 'voucher'
-                      ? (isRecent ? (isExpired ? 'PIN Expired' : 'Ready for Pickup') : 'Ready for Pickup')
+                      ? (isRecent
+                          ? (isExpired
+                              ? 'PIN Expired'
+                              : (isPrinted ? 'Printed • Ready for Pickup' : 'Ready for Pickup'))
+                          : 'Ready for Pickup')
                       : 'Station Connected'}
                   </span>
                 </div>
@@ -480,10 +587,10 @@ const LandingPage = () => {
                         <div className="pp-file-specs">{activeSpecs}</div>
                       </div>
                       <div
-                        className={`badge ${isExpired ? 'badge-danger' : 'badge-success'}`}
+                        className={`badge ${isExpired ? 'badge-danger' : isPrinted ? 'badge-info' : 'badge-success'}`}
                         style={{ textTransform: 'none', fontSize: '0.75rem' }}
                       >
-                        {isRecent ? (isExpired ? 'Expired' : 'Uploaded') : 'Sample'}
+                        {isRecent ? (isExpired ? 'Expired' : isPrinted ? 'Printed' : 'Uploaded') : 'Sample'}
                       </div>
                     </div>
 
@@ -497,41 +604,56 @@ const LandingPage = () => {
                     <div className="pp-pin-block">
                       <div className="pp-pin-header-row">
                         <span className="pp-pin-label">
-                          {isRecent ? 'Your 6-Digit Pickup PIN' : 'Sample 6-Digit Pickup PIN'}
+                          {isRecent
+                            ? (isPrinted ? 'Pickup PIN (Expired)' : 'Your 6-Digit Pickup PIN')
+                            : 'Sample 6-Digit Pickup PIN'}
                         </span>
-                        <span className="pp-ticket-badge-pill">
-                          {isExpired ? 'Expired' : 'Active Pass'}
+                        <span
+                          className={`pp-ticket-badge-pill ${isPinExpired ? 'badge-danger' : ''}`}
+                          style={isPinExpired ? { background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' } : {}}
+                        >
+                          {isPinExpired ? 'Expired' : 'Active Pass'}
                         </span>
                       </div>
                       <div className="pp-pin-digits" aria-label={`PIN: ${activePin}`}>
                         {activePin.split('').map((digit, idx) => (
-                          <div key={idx} className="pp-pin-digit-box">{digit}</div>
+                          <div
+                            key={idx}
+                            className={`pp-pin-digit-box ${isPinExpired ? 'expired' : ''}`}
+                            style={isPrinted ? { opacity: 0.6, borderColor: 'var(--border-color)', background: 'var(--bg-subtle)' } : {}}
+                          >
+                            {digit}
+                          </div>
                         ))}
                       </div>
                       <div className="pp-pin-actions-row">
                         <span className="pp-pin-countdown">
-                          <Clock size={13} className={isExpired ? 'text-danger' : 'text-primary'} aria-hidden="true" />
+                          <Clock size={13} className={isPinExpired ? 'text-danger' : 'text-primary'} aria-hidden="true" />
                           <span>
                             {isRecent
-                              ? (isExpired ? 'Expired' : `Valid for ${countdown.formatted}`)
+                              ? (isPinExpired
+                                  ? 'Expired'
+                                  : `Valid for ${countdown.formatted}`)
                               : 'Valid for 23h 48m'}
                           </span>
                         </span>
                         <Button
-                          variant="primary"
+                          variant={isPinExpired ? 'secondary' : 'primary'}
                           size="sm"
                           icon={Copy}
                           onClick={handleCopyPin}
+                          disabled={isPinExpired}
                           className="pp-pin-copy-btn"
                         >
-                          Copy PIN
+                          {isPinExpired ? 'PIN Expired' : 'Copy PIN'}
                         </Button>
                       </div>
                     </div>
 
-                    <p className="pp-preview-note">
-                      Show this 6-digit PIN to the operator at any partner print shop counter.
-                      Your document prints immediately without sharing a flash drive.
+                    <p className="pp-preview-note" style={isPrinted ? { color: 'var(--success)', fontWeight: 600 } : {}}>
+                      {isPrinted
+                        ? '✓ Print completed! Your document has been printed and the pickup PIN has expired and reset to zero.'
+                        : 'Show this 6-digit PIN to the operator at any partner print shop counter. Your document prints immediately without sharing a flash drive.'}
                     </p>
 
                     {isRecent && (
@@ -600,41 +722,14 @@ const LandingPage = () => {
       </section>
 
       {/* ── Stats Bar ── */}
-      <section className="pp-section" aria-label="Platform statistics" style={{ paddingTop: 0 }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: 16,
-            padding: '28px 24px',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-xl)',
-          }}
-        >
+      <section className="pp-section pp-stats-section" aria-label="Platform statistics">
+        <div className="pp-stats-bar">
           {STATS.map((stat) => (
-            <div key={stat.label} style={{ textAlign: 'center' }}>
-              <div
-                style={{
-                  fontSize: '1.85rem',
-                  fontWeight: 700,
-                  color: 'var(--accent)',
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1.1,
-                }}
-              >
+            <div key={stat.label} className="pp-stat-item">
+              <div className="pp-stat-value">
                 <AnimatedNumber value={stat.value} suffix={stat.suffix} />
               </div>
-              <div
-                style={{
-                  fontSize: '0.78rem',
-                  color: 'var(--text-tertiary)',
-                  marginTop: 6,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  fontWeight: 600,
-                }}
-              >
+              <div className="pp-stat-label">
                 {stat.label}
               </div>
             </div>

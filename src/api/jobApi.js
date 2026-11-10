@@ -128,6 +128,71 @@ export const jobApi = {
   },
 
   /**
+   * Upload multiple documents to the server.
+   * 
+   * @param {Array<File|Blob>} files - List of file objects to upload
+   * @param {Object} [options] - Upload configuration
+   * @param {Function} [options.onUploadProgress] - Progress callback
+   * @param {AbortSignal} [options.signal] - Optional AbortSignal
+   * @param {Object} [options.metadata] - Optional extra fields
+   * @returns {Promise<Object>} Job response containing secretKey (PIN)
+   */
+  uploadMultipleFiles: async (files, options = {}) => {
+    const { onUploadProgress, signal, metadata = {} } = options;
+    if (!Array.isArray(files) || files.length === 0) {
+      throw new Error('Please select at least one file to upload.');
+    }
+    files.forEach(validateFile);
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    // Append any additional metadata fields
+    Object.entries(metadata).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, String(value));
+      }
+    });
+
+    // Content-Type is intentionally NOT set — axios interceptor handles FormData boundary
+    const response = await api.post('/jobs/upload-multiple', formData, {
+      timeout: 180000, // 3 minutes for multi-file batches
+      onUploadProgress,
+      signal,
+    });
+
+    return response.data;
+  },
+
+  /**
+   * Download all files of a job as a single ZIP archive.
+   * 
+   * @param {string|number} pinOrUrl - The 6-digit PIN or relative download URL
+   * @param {AbortSignal} [signal] - Optional AbortSignal
+   * @returns {Promise<Blob>} ZIP archive binary blob
+   */
+  downloadAllZip: async (pinOrUrl, signal) => {
+    let url;
+    if (typeof pinOrUrl === 'string' && pinOrUrl.includes('/download-all/')) {
+      // Normalize URL relative to axios baseURL (stripping /api/v1 if included)
+      url = pinOrUrl.replace(/^\/?api\/v1/, '');
+    } else {
+      const validPin = validatePin(pinOrUrl, 'ZIP download');
+      url = `/jobs/download-all/${safePath(validPin)}`;
+    }
+
+    const response = await api.get(url, {
+      responseType: 'blob',
+      timeout: 120000,
+      signal,
+    });
+
+    return response.data;
+  },
+
+  /**
    * Mark a job as printed and trigger the final backend state change.
    * 
    * @param {string|number} pin - The 6-digit pickup PIN

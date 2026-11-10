@@ -16,11 +16,29 @@ import Sidebar from './Sidebar';
  */
 const AppLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('printpass_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const location = useLocation();
 
   // ── Stable handlers (prevent Navbar/Sidebar re-renders) ──
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
   const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
+  const toggleCollapse = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('printpass_sidebar_collapsed', String(next));
+      } catch {
+        // Ignore localStorage error
+      }
+      return next;
+    });
+  }, []);
 
   // ── 1. Auto-close sidebar on route change (mobile UX) ──
   useEffect(() => {
@@ -63,10 +81,12 @@ const AppLayout = () => {
         isSidebarOpen={sidebarOpen}
       />
 
-      <div className="app-body">
+      <div className={`app-body ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
         <Sidebar
           isOpen={sidebarOpen}
+          isCollapsed={sidebarCollapsed}
           onClose={closeSidebar}
+          onToggleCollapse={toggleCollapse}
         />
 
         <main

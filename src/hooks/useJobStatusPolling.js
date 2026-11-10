@@ -21,8 +21,11 @@ const MAX_CONSECUTIVE_ERRORS = 5;
  */
 export const useJobStatusPolling = (voucher, onUpdate) => {
   const pin = voucher?.secretKey;
-  const initialStatus = voucher?.conversionStatus?.toUpperCase();
-  const shouldPoll = Boolean(pin && initialStatus === 'PENDING');
+  const currentJobStatus = voucher?.jobStatus?.toUpperCase();
+  const currentConvStatus = voucher?.conversionStatus?.toUpperCase();
+  const isPrinted = currentJobStatus === 'READY' || currentJobStatus === 'PRINTED';
+  const isTerminalConversion = currentConvStatus === 'SUCCESS' || currentConvStatus === 'PARTIAL_SUCCESS' || currentConvStatus === 'FAILED';
+  const shouldPoll = Boolean(pin && !isPrinted && !isTerminalConversion);
 
   const [isPolling, setIsPolling] = useState(false);
   const [pollingError, setPollingError] = useState(null);
@@ -83,17 +86,23 @@ export const useJobStatusPolling = (voucher, onUpdate) => {
         setPollingError(null);
 
         const currentConv = data?.conversionStatus?.toUpperCase();
+        const latestJobStatus = data?.jobStatus?.toUpperCase();
         const currentPages = Number.isFinite(Number(data?.totalPages)) ? Math.floor(Number(data.totalPages)) : 0;
+        const isConvDone = currentConv === 'SUCCESS' || currentConv === 'PARTIAL_SUCCESS' || currentConv === 'FAILED';
+        const isJobDone = latestJobStatus === 'READY' || latestJobStatus === 'PRINTED';
 
         // Merge latest response with existing client metadata
         const updatedVoucher = {
           ...voucherRef.current,
           ...data,
+          secretKey: isJobDone ? '000000' : (data?.secretKey || voucherRef.current?.secretKey),
+          expiresAt: isJobDone ? new Date(Date.now() - 1000).toISOString() : (data?.expiresAt || voucherRef.current?.expiresAt),
+          jobStatus: latestJobStatus || voucherRef.current?.jobStatus || 'PENDING',
           totalPages: currentPages > 0 ? currentPages : voucherRef.current?.totalPages || 0,
           conversionStatus: currentConv || voucherRef.current?.conversionStatus,
         };
 
-        // Persist to storage
+        // Persist to storage (triggers cross-tab and local updates)
         saveVoucher(updatedVoucher);
 
         // Notify parent component
@@ -101,8 +110,8 @@ export const useJobStatusPolling = (voucher, onUpdate) => {
           onUpdateRef.current(updatedVoucher);
         }
 
-        // Stop polling on terminal states
-        if (currentConv === 'SUCCESS' || currentConv === 'FAILED') {
+        // Stop polling once conversion reaches a terminal state or the job has been printed
+        if (isConvDone || isJobDone) {
           setIsPolling(false);
           clearInterval(pollInterval);
         }

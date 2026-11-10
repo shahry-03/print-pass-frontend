@@ -33,7 +33,7 @@ const PIN_REGEX = /^\d{6}$/;
  * - Clean mode transitions (state reset, no stale data)
  */
 const UploadPage = () => {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
@@ -84,7 +84,6 @@ const UploadPage = () => {
     setLoading(true);
     setError(null);
     try {
-      // ✓ FIX: direct data (no `.data`)
       const jobData = await jobApi.reprintJob(oldPin);
       setResult(jobData);
       saveVoucher(jobData);
@@ -100,10 +99,10 @@ const UploadPage = () => {
     }
   }, [oldPin]);
 
-  // ── Upload: new document + PIN ──
+  // ── Upload: multi-file upload + PIN ──
   const handleUpload = useCallback(async () => {
-    if (!file) {
-      toast.error('Please select a file first');
+    if (!files || files.length === 0) {
+      toast.error('Please select at least one file first');
       return;
     }
 
@@ -113,8 +112,7 @@ const UploadPage = () => {
     abortRef.current = new AbortController();
 
     try {
-      // ✓ FIX: new options-object signature
-      const jobData = await jobApi.uploadFile(file, {
+      const jobData = await jobApi.uploadMultipleFiles(files, {
         onUploadProgress: (e) => {
           if (e.total) {
             setProgress(Math.round((e.loaded * 100) / e.total));
@@ -123,22 +121,29 @@ const UploadPage = () => {
         signal: abortRef.current.signal,
       });
 
-      // Backend may not echo file.size or file.type — attach from the client File object
+      const totalFileSize = files.reduce((acc, f) => acc + (f?.size || 0), 0);
+      const fileNamesList = files.map((f) => f.name);
+
       const enriched = {
         ...jobData,
-        fileSize: file.size,
-        fileType: file.type,
+        secretKey: jobData?.secretKey || jobData?.pin,
+        fileName: files.length === 1 ? files[0].name : `${files.length} Files: ${fileNamesList.join(', ')}`,
+        fileNames: fileNamesList,
+        fileCount: files.length,
+        fileSize: totalFileSize,
+        fileType: files[0]?.type || 'application/pdf',
       };
+
       setResult(enriched);
       saveVoucher(enriched);
-      setFile(null);
+      setFiles([]);
+
       if (jobData?.conversionStatus?.toUpperCase() === 'PENDING') {
-        toast.success('File uploaded! Document is being processed.');
+        toast.success('Files uploaded! Background conversion started.');
       } else {
-        toast.success('File uploaded successfully!');
+        toast.success('Files uploaded successfully! Save your PIN.');
       }
     } catch (err) {
-      // Ignore abort errors — user chose to cancel
       if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED' || err.name === 'AbortError') {
         toast.info('Upload cancelled');
         return;
@@ -151,7 +156,7 @@ const UploadPage = () => {
       setProgress(0);
       abortRef.current = null;
     }
-  }, [file]);
+  }, [files]);
 
   const handleCancelUpload = useCallback(() => {
     abortRef.current?.abort();
@@ -160,7 +165,7 @@ const UploadPage = () => {
   // ── Reset back to upload mode ──
   const handleReset = useCallback(() => {
     abortRef.current?.abort();
-    setFile(null);
+    setFiles([]);
     setResult(null);
     setError(null);
     setIsReprintMode(false);
@@ -181,7 +186,7 @@ const UploadPage = () => {
   // ── Mode switches — clean state, no stale data ──
   const handleSwitchToReprint = useCallback(() => {
     if (loading) return;
-    setFile(null);
+    setFiles([]);
     setError(null);
     setIsReprintMode(true);
   }, [loading]);
@@ -274,7 +279,7 @@ const UploadPage = () => {
                 className="upload-switch-btn"
               >
                 <Upload size={14} aria-hidden="true" />
-                Upload a new file instead
+                Upload documents instead
               </button>
             </div>
           </Card>
@@ -282,14 +287,15 @@ const UploadPage = () => {
           // ── Upload mode ──
           <Card>
             <div className="upload-card-title">
-              <h2>Upload Your Document</h2>
-              <p>Upload a file and receive a 6-digit pickup PIN for print shops</p>
+              <h2>Upload Your Documents</h2>
+              <p>Upload one or more files and receive a 6-digit pickup PIN for print shops</p>
             </div>
 
             <FileUploader
-              onFileSelect={setFile}
-              selectedFile={file}
-              onClear={() => setFile(null)}
+              multiple
+              selectedFiles={files}
+              onFilesSelect={setFiles}
+              onClear={() => setFiles([])}
               loading={loading}
             />
 
@@ -297,7 +303,7 @@ const UploadPage = () => {
             {loading && (
               <div className="upload-progress" role="status" aria-live="polite">
                 <div className="upload-progress-meta">
-                  <span>Uploading…</span>
+                  <span>Uploading {files.length} {files.length === 1 ? 'file' : 'files'}…</span>
                   <span className="upload-progress-percent">{progress}%</span>
                 </div>
                 <div
@@ -337,10 +343,10 @@ const UploadPage = () => {
                 size="lg"
                 loading={loading}
                 loadingText="Uploading…"
-                disabled={!file || loading}
+                disabled={files.length === 0 || loading}
                 onClick={handleUpload}
               >
-                Upload &amp; Get PIN
+                {files.length > 1 ? `Upload ${files.length} Files & Get PIN` : 'Upload & Get PIN'}
               </Button>
             </div>
 

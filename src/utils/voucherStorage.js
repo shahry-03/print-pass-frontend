@@ -165,6 +165,11 @@ export const saveVoucher = (jobData) => {
         ? jobData.convertedPdfUrl
         : null,
     fileType: typeof jobData.fileType === 'string' ? jobData.fileType : null,
+    fileCount: Number.isFinite(Number(jobData.fileCount))
+      ? Number(jobData.fileCount)
+      : (Array.isArray(jobData.files) ? jobData.files.length : (Array.isArray(jobData.fileNames) ? jobData.fileNames.length : 1)),
+    fileNames: Array.isArray(jobData.fileNames) ? jobData.fileNames : null,
+    files: Array.isArray(jobData.files) ? jobData.files : null,
     expiresAt: jobData.expiresAt ?? null,
     createdAt: jobData.createdAt ?? new Date().toISOString(),
     savedAt: Date.now(),
@@ -242,6 +247,11 @@ export const loadVoucher = () => {
         ? parsed.convertedPdfUrl
         : null,
     fileType: typeof parsed.fileType === 'string' ? parsed.fileType : null,
+    fileCount: Number.isFinite(Number(parsed.fileCount))
+      ? Number(parsed.fileCount)
+      : (Array.isArray(parsed.files) ? parsed.files.length : (Array.isArray(parsed.fileNames) ? parsed.fileNames.length : 1)),
+    fileNames: Array.isArray(parsed.fileNames) ? parsed.fileNames : null,
+    files: Array.isArray(parsed.files) ? parsed.files : null,
     expiresAt: parsed.expiresAt ?? null,
     createdAt: parsed.createdAt ?? null,
     savedAt: normalizeTimestamp(parsed.savedAt, { defaultToNow: true }),

@@ -54,40 +54,135 @@
   border-radius: 2px;
 }
 
-.pp-nav-actions { display: flex; align-items: center; gap: 10px; }
+.pp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-nav-desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
 .pp-mobile-menu-btn {
   display: none;
-  background: transparent;
+  background: var(--bg-glass);
   color: var(--text-primary);
-  padding: 6px;
-  border-radius: var(--radius-sm);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
-.pp-mobile-menu-btn:hover { background: var(--bg-tertiary); }
+.pp-mobile-menu-btn:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--border-hover);
+}
+.pp-mobile-menu-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
 
+/* Mobile Drawer Backdrop */
+.pp-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 60px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: calc(var(--z-sticky) - 1);
+}
+
+/* Mobile Drawer Sheet */
 .pp-mobile-drawer {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px var(--space-lg) 20px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: 16px var(--space-md) 20px;
+  z-index: var(--z-sticky);
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
-.pp-mobile-drawer a {
+
+.pp-mobile-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.pp-mobile-drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--text-secondary);
-  padding: 6px 0;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  min-height: 44px;
 }
-.pp-mobile-drawer a:hover { color: var(--text-primary); }
+
+.pp-mobile-drawer-link:hover,
+.pp-mobile-drawer-link.active {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.pp-mobile-link-arrow {
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.pp-mobile-drawer-link:hover .pp-mobile-link-arrow {
+  transform: translateX(3px);
+  color: var(--primary);
+}
+
 .pp-mobile-drawer-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-top: 8px;
+  gap: 10px;
+  padding-top: 14px;
   border-top: 1px solid var(--border);
+}
+
+.pp-mobile-primary-cta {
+  min-height: 48px;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.pp-mobile-drawer-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  text-align: center;
+}
+
+.pp-mobile-drawer-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 /* ── Page container ── */
@@ -135,6 +230,10 @@
   margin-bottom: 20px;
 }
 
+.pp-hero-title-break {
+  display: inline;
+}
+
 .pp-hero-sub {
   font-size: 1.1rem;
   line-height: 1.65;
@@ -149,6 +248,24 @@
   gap: 12px;
   flex-wrap: wrap;
   margin-bottom: 32px;
+}
+
+.pp-hero-btn {
+  min-height: 48px;
+  font-weight: 600;
+}
+
+.pp-hero-primary-btn {
+  box-shadow: 0 4px 14px rgba(49, 94, 246, 0.25);
+}
+
+.pp-hero-secondary-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+}
+
+.pp-hero-share-btn {
+  color: var(--text-secondary);
 }
 
 .pp-trust-strip {
@@ -403,6 +520,46 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* ── Stats Bar ── */
+.pp-stats-section {
+  padding: 44px var(--space-lg);
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  max-width: 100%;
+}
+
+.pp-stats-bar {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  text-align: center;
+}
+
+.pp-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-stat-value {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.pp-stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-weight: 500;
 }
 .pp-section-header {
   text-align: center;
@@ -717,7 +874,7 @@
 }
 
 @media (max-width: 960px) {
-  .pp-hero-grid { grid-template-columns: 1fr; gap: 44px; }
+  .pp-hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .pp-hero-left { text-align: center; align-items: center; }
   .pp-hero-sub { margin-left: auto; margin-right: auto; }
   .pp-hero-ctas { justify-content: center; }
@@ -725,6 +882,7 @@
   .pp-steps-grid { grid-template-columns: 1fr; gap: 16px; }
   .pp-features-grid { grid-template-columns: repeat(2, 1fr); }
   .pp-comparison-grid { grid-template-columns: 1fr; }
+  .pp-stats-bar { grid-template-columns: repeat(2, 1fr); gap: 24px; }
   .pp-banner-card {
     grid-template-columns: 1fr;
     padding: 32px 24px;
@@ -736,20 +894,71 @@
 
 @media (max-width: 768px) {
   .pp-nav-links { display: none; }
+  .pp-nav-desktop-actions { display: none; }
   .pp-mobile-menu-btn { display: flex; }
+  .pp-hero { padding: 96px var(--space-md) 48px; }
+  .pp-hero-title { font-size: clamp(2rem, 7vw, 2.5rem); }
+  .pp-hero-title-break { display: none; }
+  .pp-hero-ctas {
+    flex-direction: column;
+    width: 100%;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 28px;
+    gap: 10px;
+  }
+  .pp-hero-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+  }
   .pp-features-grid { grid-template-columns: 1fr; }
   .pp-faq-grid { grid-template-columns: 1fr; }
+  .pp-stats-section { padding: 36px var(--space-md); }
+  .pp-stats-bar { grid-template-columns: repeat(2, 1fr); gap: 20px 16px; }
   .pp-footer-top { grid-template-columns: 1fr; gap: 32px; }
   .pp-footer-bottom { flex-direction: column; align-items: flex-start; }
 }
 
 @media (max-width: 480px) {
-  .pp-hero { padding-top: 104px; padding-bottom: 48px; }
-  .pp-hero-title { font-size: 2.1rem; }
-  .pp-hero-ctas { flex-direction: column; width: 100%; }
-  .pp-hero-ctas a,
-  .pp-hero-ctas button { width: 100%; }
-  .pp-pin-digit-box { width: 36px; height: 46px; font-size: 1.25rem; }
+  .pp-nav { height: 60px; padding: 0 var(--space-md); }
+  .pp-hero { padding-top: 84px; padding-bottom: 40px; }
+  .pp-hero-title { font-size: clamp(1.75rem, 8vw, 2.15rem); margin-bottom: 16px; }
+  .pp-hero-sub { font-size: 0.95rem; line-height: 1.55; margin-bottom: 24px; }
+  .pp-hero-btn { min-height: 50px; font-size: 0.95rem; }
+  .pp-preview-wrap { width: 100%; }
+  .pp-preview-body { padding: 16px 12px; }
+  .pp-ticket-divider { margin: 0 -12px 14px; }
+  .pp-pin-block { padding: 14px 10px; }
   .pp-pin-digits { gap: 4px; }
-  .pp-section { padding: 56px var(--space-md); }
+  .pp-pin-digit-box {
+    width: clamp(34px, 11vw, 42px);
+    height: clamp(44px, 13vw, 50px);
+    font-size: clamp(1.2rem, 5vw, 1.45rem);
+  }
+  .pp-pin-actions-row {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    text-align: center;
+  }
+  .pp-pin-countdown { justify-content: center; }
+  .pp-file-row { padding: 10px 12px; gap: 10px; }
+  .pp-file-icon-box { width: 36px; height: 36px; }
+  .pp-file-name { font-size: 0.825rem; }
+  .pp-file-specs { font-size: 0.72rem; }
+  .pp-section { padding: 48px var(--space-md); }
+  .pp-stat-value { font-size: clamp(1.6rem, 6vw, 2rem); }
+  .pp-stat-label { font-size: 0.775rem; }
+}
+
+@media (max-width: 360px) {
+  .pp-hero { padding-left: 12px; padding-right: 12px; }
+  .pp-hero-title { font-size: 1.6rem; }
+  .pp-pin-digits { gap: 3px; }
+  .pp-pin-digit-box { width: 34px; height: 42px; font-size: 1.15rem; }
+  .pp-stats-bar { gap: 16px 8px; }
+  .pp-stat-value { font-size: 1.45rem; }
+  .pp-stat-label { font-size: 0.72rem; }
 }

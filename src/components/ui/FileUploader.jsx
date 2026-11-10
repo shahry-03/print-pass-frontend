@@ -1,5 +1,5 @@
 import {
-  forwardRef, useCallback, useEffect, useId, useMemo, useState,
+  forwardRef, useCallback, useId, useMemo, useState,
 } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, FileText, FileImage, X, AlertCircle } from 'lucide-react';
@@ -48,32 +48,24 @@ const getRejectionMessage = (rejection) => {
 };
 
 /**
- * FileUploader — Accessible drag-and-drop file input.
+ * FileUploader — Accessible drag-and-drop file input with multi-file support.
  *
  * Features:
- * - Drag-and-drop OR click to browse
- * - Visual feedback for drag-active AND drag-reject states
- * - Inline error messages for too-large / wrong-type files
- * - "Replace" and "Remove" actions after selecting a file
- * - Image preview for image files (auto-revoked blob URL)
- * - Disabled / loading states
- * - Dynamic helper text (derived from `accept` and `maxSize`)
- * - Full a11y: aria-describedby, error role="alert", keyboard support
- * - Forwards refs
- *
- * @example
- *   <FileUploader
- *     onFileSelect={setFile}
- *     selectedFile={file}
- *     onClear={() => setFile(null)}
- *     maxSize={50 * 1024 * 1024}
- *     loading={uploading}
- *   />
+ * - Drag-and-drop OR click to browse multiple files
+ * - Individual file removal and file list preview
+ * - Visual feedback for drag-active and drag-reject states
+ * - Inline error messages for invalid files
+ * - Combined file count and size indicators
+ * - Backward compatible with single-file mode (`multiple={false}`)
  */
 const FileUploader = forwardRef(({
   onFileSelect,
   selectedFile,
+  onFilesSelect,
+  selectedFiles = [],
+  onFileRemove,
   onClear,
+  multiple = true,
   accept = DEFAULT_ACCEPT,
   maxSize = 50 * 1024 * 1024,
   disabled = false,
@@ -85,15 +77,38 @@ const FileUploader = forwardRef(({
   const helperId = useId();
   const errorId = useId();
 
+  // Normalized files array
+  const files = useMemo(() => {
+    if (multiple) {
+      if (Array.isArray(selectedFiles) && selectedFiles.length > 0) return selectedFiles;
+      if (selectedFile) return [selectedFile];
+      return [];
+    }
+    return selectedFile ? [selectedFile] : [];
+  }, [multiple, selectedFiles, selectedFile]);
+
+  const hasFiles = files.length > 0;
+  const totalSize = useMemo(() => files.reduce((acc, f) => acc + (f?.size || 0), 0), [files]);
+
   // Internal error state (from dropzone rejections)
   const [internalError, setInternalError] = useState(null);
 
   const onDrop = useCallback((acceptedFiles) => {
     setInternalError(null);
     if (acceptedFiles.length > 0) {
-      onFileSelect?.(acceptedFiles[0]);
+      if (multiple) {
+        // Filter out duplicates by name + size
+        const existingKeys = new Set(files.map((f) => `${f.name}_${f.size}`));
+        const newUnique = acceptedFiles.filter((f) => !existingKeys.has(`${f.name}_${f.size}`));
+        const updated = [...files, ...newUnique];
+        onFilesSelect?.(updated);
+        onFileSelect?.(updated[0]);
+      } else {
+        onFileSelect?.(acceptedFiles[0]);
+        onFilesSelect?.([acceptedFiles[0]]);
+      }
     }
-  }, [onFileSelect]);
+  }, [multiple, files, onFilesSelect, onFileSelect]);
 
   const onDropRejected = useCallback((rejections) => {
     if (rejections.length > 0) {
@@ -110,51 +125,47 @@ const FileUploader = forwardRef(({
   } = useDropzone({
     onDrop,
     onDropRejected,
-    multiple: false,
+    multiple,
     maxSize,
     accept,
     disabled: disabled || loading,
-    // When a file is already selected, clicking the root shouldn't reopen
-    // the picker — only the explicit "Replace" button should.
-    noClick: Boolean(selectedFile),
-    noKeyboard: Boolean(selectedFile),
+    noClick: false,
+    noKeyboard: false,
   });
 
   const displayError = externalError || internalError;
   const acceptText = useMemo(() => getAcceptText(accept), [accept]);
-  const FileIcon = selectedFile ? getFileIcon(selectedFile.type) : Upload;
 
-  // ── Image preview (blob URL must be revoked on unmount/change) ──
-  const isImagePreview = Boolean(
-    selectedFile && selectedFile.type?.startsWith('image/')
-  );
-  const imagePreviewUrl = useMemo(() => {
-    if (!isImagePreview) return null;
-    return URL.createObjectURL(selectedFile);
-  }, [selectedFile, isImagePreview]);
-
-  useEffect(() => () => {
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-  }, [imagePreviewUrl]);
-
-  // ── Clear handler (also resets internal error) ──
-  const handleClear = (e) => {
+  // Clear all handler
+  const handleClearAll = (e) => {
     e.stopPropagation();
     setInternalError(null);
     onClear?.();
+    if (onFilesSelect) onFilesSelect([]);
   };
 
-  // ── aria-describedby: helper (empty state only) + error ──
+  // Individual file removal
+  const handleRemoveOne = (index, e) => {
+    e.stopPropagation();
+    if (onFileRemove) {
+      onFileRemove(index);
+    } else if (onFilesSelect) {
+      const updated = files.filter((_, i) => i !== index);
+      onFilesSelect(updated);
+      if (updated.length === 0 && onClear) onClear();
+    }
+  };
+
   const describedBy = [
     displayError && errorId,
-    !selectedFile && !loading && helperId,
+    !hasFiles && !loading && helperId,
   ].filter(Boolean).join(' ') || undefined;
 
   const rootClasses = [
     'file-uploader',
     isDragActive && 'drag-active',
     isDragReject && 'drag-reject',
-    Boolean(selectedFile) && 'has-file',
+    hasFiles && 'has-file',
     disabled && 'is-disabled',
     loading && 'is-loading',
     displayError && 'has-error',
@@ -162,102 +173,156 @@ const FileUploader = forwardRef(({
   ].filter(Boolean).join(' ');
 
   return (
-    <div
-      {...getRootProps({ ref, 'aria-describedby': describedBy })}
-      className={rootClasses}
-      {...props}
-    >
-      <input {...getInputProps()} />
+    <div className="file-uploader-container">
+      {/* ── Dropzone Area ── */}
+      <div
+        {...getRootProps({ ref, 'aria-describedby': describedBy })}
+        className={rootClasses}
+        {...props}
+      >
+        <input {...getInputProps()} />
 
-      {loading ? (
-        /* ── Loading state (still shows filename) ── */
-        <>
-          <div className="file-uploader-icon">
-            <span className="spinner" aria-hidden="true" />
-          </div>
-          <h4 title={selectedFile?.name}>
-            {selectedFile ? truncateFileName(selectedFile.name) : 'Uploading…'}
-          </h4>
-          <p className="text-muted text-sm">
-            {selectedFile
-              ? `Uploading ${formatFileSize(selectedFile.size)} — please wait`
-              : 'Please wait…'}
-          </p>
-        </>
-      ) : selectedFile ? (
-        /* ── File selected state ── */
-        <>
-          <div className="file-uploader-icon">
-            {isImagePreview ? (
-              <img
-                src={imagePreviewUrl}
-                alt=""
-                className="file-uploader-preview"
-              />
-            ) : (
-              <FileIcon size={26} aria-hidden="true" />
-            )}
-          </div>
-          <h4 title={selectedFile.name}>
-            {truncateFileName(selectedFile.name)}
-          </h4>
-          <p className="text-muted text-sm">
-            {formatFileSize(selectedFile.size)}
-          </p>
-          <div className="file-uploader-actions">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={(e) => { e.stopPropagation(); open(); }}
-              disabled={disabled}
-            >
-              Replace
-            </button>
-            {onClear && (
+        {loading ? (
+          /* ── Loading state ── */
+          <>
+            <div className="file-uploader-icon">
+              <span className="spinner" aria-hidden="true" />
+            </div>
+            <h4>Uploading {files.length} {files.length === 1 ? 'file' : 'files'}…</h4>
+            <p className="text-muted text-sm">
+              Uploading {formatFileSize(totalSize)} — please wait
+            </p>
+          </>
+        ) : hasFiles && multiple ? (
+          /* ── Multi-file compact drop invitation when files are already selected ── */
+          <>
+            <div className="file-uploader-icon" style={{ marginBottom: 8, width: 44, height: 44 }}>
+              <Upload size={20} aria-hidden="true" />
+            </div>
+            <h4 style={{ fontSize: '0.95rem', marginBottom: 4 }}>
+              {isDragActive ? 'Drop additional files here' : 'Add more files or drag & drop'}
+            </h4>
+            <p className="text-muted text-xs" style={{ margin: 0 }}>
+              Click to browse or drop more documents
+            </p>
+          </>
+        ) : hasFiles && !multiple ? (
+          /* ── Single-file selected state (backward compatibility) ── */
+          <>
+            <div className="file-uploader-icon">
+              <FileText size={26} aria-hidden="true" />
+            </div>
+            <h4 title={files[0].name}>{truncateFileName(files[0].name)}</h4>
+            <p className="text-muted text-sm">{formatFileSize(files[0].size)}</p>
+            <div className="file-uploader-actions">
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={handleClear}
+                className="btn btn-secondary btn-sm"
+                onClick={(e) => { e.stopPropagation(); open(); }}
                 disabled={disabled}
-                aria-label="Remove selected file"
               >
-                <X size={14} aria-hidden="true" />
-                Remove
+                Replace
               </button>
-            )}
-          </div>
-        </>
-      ) : (
-        /* ── Empty state ── */
-        <>
-          <div className="file-uploader-icon">
-            {isDragReject ? (
-              <AlertCircle size={26} aria-hidden="true" />
-            ) : (
-              <Upload size={26} aria-hidden="true" />
-            )}
-          </div>
-          <h4>
-            {isDragReject
-              ? 'File type not supported'
-              : isDragActive
-                ? 'Drop your file here'
-                : 'Drag & drop your file'}
-          </h4>
-          <p className="text-muted">
-            or <span className="browse-link">browse</span> to choose a file
-          </p>
-          <p id={helperId} className="text-xs text-muted file-uploader-hint">
-            {acceptText} — Max {formatFileSize(maxSize)}
-          </p>
-        </>
-      )}
+              {onClear && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleClearAll}
+                  disabled={disabled}
+                  aria-label="Remove selected file"
+                >
+                  <X size={14} aria-hidden="true" />
+                  Remove
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          /* ── Empty state ── */
+          <>
+            <div className="file-uploader-icon">
+              {isDragReject ? (
+                <AlertCircle size={26} aria-hidden="true" />
+              ) : (
+                <Upload size={26} aria-hidden="true" />
+              )}
+            </div>
+            <h4>
+              {isDragReject
+                ? 'File type not supported'
+                : isDragActive
+                  ? 'Drop your files here'
+                  : multiple
+                    ? 'Drag & drop your files'
+                    : 'Drag & drop your file'}
+            </h4>
+            <p className="text-muted">
+              or <span className="browse-link">browse</span> to choose {multiple ? 'files' : 'a file'}
+            </p>
+            <p id={helperId} className="text-xs text-muted file-uploader-hint">
+              {acceptText} — Max {formatFileSize(maxSize)}
+            </p>
+          </>
+        )}
 
-      {/* ── Error message ── */}
-      {displayError && (
-        <div id={errorId} className="file-uploader-error" role="alert">
-          <AlertCircle size={14} aria-hidden="true" />
-          <span>{displayError}</span>
+        {/* ── Error message ── */}
+        {displayError && (
+          <div id={errorId} className="file-uploader-error" role="alert">
+            <AlertCircle size={14} aria-hidden="true" />
+            <span>{displayError}</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Multi-file selected items list ── */}
+      {multiple && hasFiles && !loading && (
+        <div className="file-uploader-list-wrapper">
+          <div className="file-uploader-list-header">
+            <div className="file-uploader-list-count">
+              <span>{files.length} {files.length === 1 ? 'file' : 'files'} selected</span>
+              <span className="file-uploader-size-tag">({formatFileSize(totalSize)})</span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm text-muted"
+              onClick={handleClearAll}
+              disabled={disabled}
+              title="Remove all files"
+            >
+              Clear all
+            </button>
+          </div>
+
+          <div className="file-uploader-selected-items">
+            {files.map((f, idx) => {
+              const Icon = getFileIcon(f.type);
+              return (
+                <div key={`${f.name}_${idx}`} className="file-uploader-item-card">
+                  <div className="file-uploader-item-icon">
+                    <Icon size={18} aria-hidden="true" />
+                  </div>
+                  <div className="file-uploader-item-info">
+                    <span className="file-uploader-item-name" title={f.name}>
+                      {truncateFileName(f.name, 36)}
+                    </span>
+                    <span className="file-uploader-item-size">
+                      {formatFileSize(f.size)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="file-uploader-item-remove"
+                    onClick={(e) => handleRemoveOne(idx, e)}
+                    disabled={disabled}
+                    aria-label={`Remove ${f.name}`}
+                    title="Remove file"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
